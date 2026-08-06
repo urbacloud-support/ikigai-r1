@@ -17,8 +17,9 @@ import {
   Outlet,
 } from "react-router-dom";
 import Login from './Login';
-import { EventsView, ProgressView, UsersView } from './AdminConsole';
+import { EventsView, ProgressView, UsersView } from "./AdminConsole";
 import AdminLayout from './AdminLayout';
+import AdminMailingService from './pages/admin/AdminMailingService';
 import "./index.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -5067,6 +5068,7 @@ function ProtectedRoutes({ allowedRoles }) {
       <Route path="/shortlist" element={<AdminShortlist events={events} />} />
       <Route path="/users" element={<UsersView />} />
       <Route path="/round2" element={<AdminRound2 />} />
+      <Route path="/mailing" element={<AdminMailingService events={events} />} />
       <Route path="/event/:id" element={<EventDetails events={events} setEvents={setEvents} />} />
     </Route>
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { Menu, CalendarDays, TrendingUp, Users, UserCheck, Rocket } from "lucide-react";
+import { Menu, CalendarDays, TrendingUp, Users, UserCheck, Rocket, Mail } from "lucide-react";
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -13,6 +13,7 @@ export default function AdminLayout() {
   if (path.includes("/shortlist")) activeTab = "shortlist";
   if (path.includes("/users")) activeTab = "users";
   if (path.includes("/round2")) activeTab = "round2";
+  if (path.includes("/mailing")) activeTab = "mailing";
 
   const navItems = [
     { id: "events", label: "Events", icon: CalendarDays, path: "/dashboard" },
@@ -20,6 +21,7 @@ export default function AdminLayout() {
     { id: "shortlist", label: "Shortlist", icon: UserCheck, path: "/shortlist" },
     { id: "round2", label: "Round 2", icon: Rocket, path: "/round2" },
     { id: "users", label: "Users", icon: Users, path: "/users" },
+    { id: "mailing", label: "Mailing Service", icon: Mail, path: "/mailing" },
   ];
 
   return (
