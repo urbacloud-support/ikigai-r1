@@ -395,5 +395,39 @@ router.post("/upload-photo", upload.single("photo"), async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Update individual member's T-shirt size from My Team section
+router.put("/update-tshirt", async (req, res) => {
+  try {
+    const { participantId, memberEmail, size, teamName, leaderEmail, eventId, members } = req.body;
+    if (!participantId || !memberEmail || !size) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    let teamDoc = await TeamModel.findOne({ participantId });
+    if (!teamDoc) {
+      teamDoc = new TeamModel({
+        participantId,
+        teamName: teamName || "Unknown",
+        leaderEmail: leaderEmail || "",
+        eventId: eventId || "",
+        members: members || [],
+        trackPreferences: [],
+        status: "Pending",
+        tshirtSizes: { [memberEmail]: size }
+      });
+      await teamDoc.save();
+    } else {
+      teamDoc.tshirtSizes = teamDoc.tshirtSizes || {};
+      teamDoc.tshirtSizes[memberEmail] = size;
+      teamDoc.markModified('tshirtSizes');
+      await teamDoc.save();
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error updating t-shirt size:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 export default router;

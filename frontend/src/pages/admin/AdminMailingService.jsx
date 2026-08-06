@@ -281,9 +281,15 @@ export default function AdminMailingService({ events = [] }) {
                       className="w-full border-gray-300 rounded-lg px-3 py-2 bg-gray-50 border focus:ring-2 focus:ring-purple-500 outline-none transition"
                     >
                       <option value="">All Tracks</option>
-                      {events.find(e => e._id === selectedEventId).tracks.map(t => (
-                        <option key={t.id} value={t.id}>{t.title}</option>
-                      ))}
+                      {(() => {
+                        const evt = events.find(e => e._id === selectedEventId);
+                        const tracksToRender = evt.title === "Ikigai Hackathon 2026" 
+                          ? evt.tracks.filter(t => t.title === "Hybrid") 
+                          : evt.tracks;
+                        return tracksToRender.map(t => (
+                          <option key={t.id} value={t.id}>{t.title}</option>
+                        ));
+                      })()}
                     </select>
                   </div>
                 )}
@@ -294,7 +300,6 @@ export default function AdminMailingService({ events = [] }) {
                     <option value="None">None</option>
                     <option value="Saved Shortlisted Teams">Saved Shortlisted Teams</option>
                     <option value="All Students">All Students</option>
-                    <option value="Shortlisted Students">Shortlisted Students</option>
                     <option value="Not Shortlisted Students">Not Shortlisted Students</option>
                   </select>
                 </div>

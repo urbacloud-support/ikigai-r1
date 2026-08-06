@@ -117,10 +117,16 @@ router.get("/participants", async (req, res) => {
           missingArray.push("Round 2 Registration Not Started", "Preferences", "Payment", "T-Shirts", "Photos");
         }
 
+        let leaderMember = null;
+        if (st.members && st.members.length > 0) {
+          leaderMember = st.members.find(m => m.isLeader) || st.members[0];
+        }
+        let finalLeaderName = st.leaderName || st.name || leaderMember?.name || (leaderMember?.firstName ? `${leaderMember.firstName} ${leaderMember.lastName || ''}`.trim() : null) || "Unknown";
+
         participantsData.push({
           id: st._id.toString(),
           teamName: st.teamName || "Unknown Team",
-          leaderName: st.leaderName || "Leader",
+          leaderName: finalLeaderName,
           leaderEmail: leaderEmail,
           isRegisteredR2: !!r2Team,
           members: st.members || [],
@@ -207,10 +213,16 @@ router.get("/participants", async (req, res) => {
             missingArray.push("Round 2 Registration Not Started", "Preferences", "Payment", "T-Shirts", "Photos");
           }
 
+          let leaderMember = null;
+          if (p.members && p.members.length > 0) {
+            leaderMember = p.members.find(m => m.isLeader) || p.members[0];
+          }
+          let finalLeaderName = p.name || p.leaderName || leaderMember?.name || (leaderMember?.firstName ? `${leaderMember.firstName} ${leaderMember.lastName || ''}`.trim() : null) || "Unknown";
+
           return {
             id: p._id.toString(),
             teamName: p.teamName || "N/A",
-            leaderName: p.name || p.leaderName || "Unknown",
+            leaderName: finalLeaderName,
             leaderEmail,
             isRegisteredR2: !!r2Team,
             members: p.members || [],

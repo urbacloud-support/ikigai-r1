@@ -20,8 +20,8 @@ export default function AdminLayout() {
     { id: "progress", label: "Progress", icon: TrendingUp, path: "/progress" },
     { id: "shortlist", label: "Shortlist", icon: UserCheck, path: "/shortlist" },
     { id: "round2", label: "Round 2", icon: Rocket, path: "/round2" },
-    { id: "users", label: "Users", icon: Users, path: "/users" },
     { id: "mailing", label: "Mailing Service", icon: Mail, path: "/mailing" },
+    { id: "users", label: "Users", icon: Users, path: "/users" },
   ];
 
   return (
