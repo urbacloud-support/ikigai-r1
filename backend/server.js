@@ -117,7 +117,9 @@ const TeamLeaderSchema = new mongoose.Schema(
     passwordHash: String,
     eventId: String,
     participantId: { type: mongoose.Schema.Types.ObjectId, ref: "Participant" },
-    inviteSent: { type: Boolean, default: false }
+    inviteSent: { type: Boolean, default: false },
+    disableLoginAfter: { type: Date },
+    disableLoginMessage: { type: String, default: "Registration window is now closed!" }
   },
   { timestamps: true }
 );
@@ -617,6 +619,12 @@ app.post("/api/login", async (req, res) => {
 
     const teamLeader = await TeamLeader.findOne({ email: normalizedEmail });
     if (teamLeader && teamLeader.passwordHash === hashed) {
+      if (teamLeader.disableLoginAfter && new Date() >= new Date(teamLeader.disableLoginAfter)) {
+        return res.status(401).json({
+          success: false,
+          message: teamLeader.disableLoginMessage || "Registration window is now closed!"
+        });
+      }
       return res.json({
         success: true,
         role: "teamLeader",
@@ -3020,4 +3028,80 @@ if (process.env.NODE_ENV !== "test") {
 
 /* ------------------------------- Server Start --------------------------- */
 
+/* ================== REGISTRATION CONTROL ================== */
+app.get("/api/admin/close-registration/list", async (req, res) => {
+  try {
+    const leaders = await TeamLeader.find({}).lean();
+    
+    let ikigai2Db;
+    if (process.env.MONGO_URI) {
+      const uri2 = process.env.MONGO_URI.replace("/ikigai?", "/ikigai2?");
+      ikigai2Db = mongoose.createConnection(uri2);
+    } else {
+      ikigai2Db = mongoose.connection;
+    }
+    const TeamSchema = new mongoose.Schema({}, { strict: false });
+    const TeamModel = ikigai2Db.model("Team", TeamSchema, "teams");
 
+    const teams = await TeamModel.find({}).lean();
+    
+    const result = leaders.map(leader => {
+      const pId = leader.participantId ? leader.participantId.toString() : null;
+      const email = leader.email ? leader.email.toLowerCase() : null;
+      
+      const team = teams.find(t => 
+        (pId && t.participantId === pId) || 
+        (email && t.leaderEmail && t.leaderEmail.toLowerCase() === email)
+      );
+
+      const hasPaid = team && (team.receiptUrl || team.status === "Approved");
+
+      return {
+        _id: leader._id,
+        name: leader.name,
+        email: leader.email,
+        teamName: leader.teamName,
+        hasPaid: !!hasPaid,
+        disableLoginAfter: leader.disableLoginAfter,
+        disableLoginMessage: leader.disableLoginMessage
+      };
+    });
+
+    res.json({ success: true, leaders: result });
+    
+    if (process.env.MONGO_URI && ikigai2Db) {
+      await ikigai2Db.close();
+    }
+  } catch (err) {
+    console.error("Error fetching close registration list:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.post("/api/admin/close-registration/update", async (req, res) => {
+  try {
+    const { updates, disableTime, disableMessage } = req.body;
+    
+    for (const update of updates) {
+      if (update.disabled) {
+        await TeamLeader.updateOne(
+          { _id: update.id },
+          { $set: { 
+            disableLoginAfter: disableTime ? new Date(disableTime) : null,
+            disableLoginMessage: disableMessage || "Registration window is now closed!"
+          }}
+        );
+      } else {
+        await TeamLeader.updateOne(
+          { _id: update.id },
+          { $unset: { disableLoginAfter: 1, disableLoginMessage: 1 } }
+        );
+      }
+    }
+
+    res.json({ success: true, message: "Registration control updated successfully" });
+  } catch (err) {
+    console.error("Error updating close registration:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});

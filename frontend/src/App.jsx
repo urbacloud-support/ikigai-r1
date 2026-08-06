@@ -27,6 +27,7 @@ import autoTable from "jspdf-autotable";
 import AdminEventParticipants from "./AdminEventParticipants";
 import AdminShortlist from "./AdminShortlist";
 import AdminRound2 from "./AdminRound2";
+import AdminCloseRegistration from "./pages/admin/AdminCloseRegistration";
 import StudentDashboard from "./pages/StudentDashboard";
 import TeamLayout from "./pages/TeamLayout";
 import TeamHome from "./pages/TeamHome";
@@ -5069,6 +5070,7 @@ function ProtectedRoutes({ allowedRoles }) {
       <Route path="/users" element={<UsersView />} />
       <Route path="/round2" element={<AdminRound2 />} />
       <Route path="/mailing" element={<AdminMailingService events={events} />} />
+      <Route path="/close-registration" element={<AdminCloseRegistration />} />
       <Route path="/event/:id" element={<EventDetails events={events} setEvents={setEvents} />} />
     </Route>
 
