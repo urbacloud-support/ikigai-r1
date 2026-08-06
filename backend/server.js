@@ -2919,7 +2919,7 @@ app.post("/api/admin/team-leaders/send-mail", async (req, res) => {
                 <p>Your selection reflects your team's innovation, technical skills, and outstanding performance in Round 1. We look forward to welcoming you to the Grand Finale for an exciting journey of collaboration, creativity, and problem-solving.</p>
                 
                 <h2 style="color: #86198f; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #fdf4ff; padding-bottom: 5px;">Complete Your Grand Finale Registration</h2>
-                <p>To confirm your participation, please complete the registration process <strong style="color: #d946ef;">on or before 6 August 2026, 5:00 PM</strong>.</p>
+                <p>To confirm your participation, please complete the registration process <strong style="color: #d946ef;">on or before 7 August 2026, 5:00 PM</strong>.</p>
                 <ul style="padding-left: 20px;">
                   <li style="margin-bottom: 8px;">Pay the <strong>registration fee of ₹501 per team</strong></li>
                   <li style="margin-bottom: 8px;">Select your preferred <strong>problem domain (track)</strong> in order of preference</li>
