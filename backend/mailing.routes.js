@@ -40,10 +40,16 @@ router.get("/participants", async (req, res) => {
 
       // For each shortlisted team, fetch their Round 2 registration from TeamModel (ikigai2)
       for (const st of shortlistedTeams) {
-        const leaderEmail = (st.createdBy || st.leaderEmail || "").toLowerCase();
+        const pId = st.participantId || st._id.toString();
+        const leaderEmailFallback = (st.createdBy || st.leaderEmail || "").toLowerCase();
         
-        // Find if they registered in round 2
-        const r2Team = await TeamModel.findOne({ leaderEmail }).lean();
+        // Find if they registered in round 2 by participantId OR fallback to email
+        const r2Team = await TeamModel.findOne({ 
+          $or: [ { participantId: pId }, { leaderEmail: leaderEmailFallback } ] 
+        }).lean();
+        
+        // If they changed their email in Round 2, use the new updated email!
+        const leaderEmail = r2Team && r2Team.leaderEmail ? r2Team.leaderEmail.toLowerCase() : leaderEmailFallback;
         
         // Track filtering
         if (trackId) {
@@ -156,8 +162,15 @@ router.get("/participants", async (req, res) => {
 
       // Populate identical checkpoint statuses for frontend filtering
       participantsData = await Promise.all(allParts.map(async p => {
-          const leaderEmail = (p.email || p.createdBy || "").toLowerCase();
-          const r2Team = await TeamModel.findOne({ leaderEmail }).lean();
+          const pId = p._id.toString();
+          const leaderEmailFallback = (p.email || p.createdBy || "").toLowerCase();
+          
+          const r2Team = await TeamModel.findOne({ 
+            $or: [ { participantId: pId }, { leaderEmail: leaderEmailFallback } ] 
+          }).lean();
+          
+          // If they changed their email in Round 2, prioritize the new email
+          const leaderEmail = r2Team && r2Team.leaderEmail ? r2Team.leaderEmail.toLowerCase() : leaderEmailFallback;
           
           let tShirtSizeProvided = false;
           let photosUploaded = false;

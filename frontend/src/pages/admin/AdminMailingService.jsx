@@ -32,7 +32,7 @@ export default function AdminMailingService({ events = [] }) {
   // UI State
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewParticipantsModalOpen, setPreviewParticipantsModalOpen] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [sendingType, setSendingType] = useState(null); // 'selected' or 'all'
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -183,7 +183,7 @@ export default function AdminMailingService({ events = [] }) {
     if (!emailSubject || !emailBody) return alert("Subject and Body are required!");
     if (!confirm(`Are you sure you want to send this email to ${targets.length} participants?`)) return;
 
-    setSending(true);
+    setSendingType(sendToAllFiltered ? 'all' : 'selected');
     try {
       const payload = {
         recipients: targets,
@@ -206,7 +206,7 @@ export default function AdminMailingService({ events = [] }) {
     } catch (err) {
       alert("Network Error while sending emails");
     }
-    setSending(false);
+    setSendingType(null);
   };
 
   // Status Badge Component
@@ -572,18 +572,18 @@ export default function AdminMailingService({ events = [] }) {
           
           <button 
             onClick={() => handleSendEmails(false)}
-            disabled={sending || selectedIds.size === 0}
+            disabled={sendingType !== null || selectedIds.size === 0}
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition disabled:opacity-50"
           >
-            {sending ? 'Sending...' : `Send to Selected (${selectedIds.size})`}
+            {sendingType === 'selected' ? 'Sending...' : `Send to Selected (${selectedIds.size})`}
           </button>
           
           <button 
             onClick={() => handleSendEmails(true)}
-            disabled={sending || filteredParticipants.length === 0}
+            disabled={sendingType !== null || filteredParticipants.length === 0}
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-900 hover:bg-indigo-950 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition disabled:opacity-50"
           >
-            {sending ? 'Sending...' : `Send to All Filtered (${filteredParticipants.length})`}
+            {sendingType === 'all' ? 'Sending...' : `Send to All Filtered (${filteredParticipants.length})`}
           </button>
         </div>
       </div>
