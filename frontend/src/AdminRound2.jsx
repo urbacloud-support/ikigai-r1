@@ -321,34 +321,39 @@ export default function AdminRound2() {
       
       members.forEach((m, mIdx) => {
         const row = [];
+        row.isTeamStart = (mIdx === 0);
+
         if (mIdx === 0) {
-          row.push(tIdx + 1);
-          row.push(team.teamName);
-        } else {
-          row.push("");
-          row.push("");
+          row.push({ content: tIdx + 1, rowSpan: members.length, styles: { valign: 'middle', halign: 'center' } });
+          row.push({ content: team.teamName, rowSpan: members.length, styles: { valign: 'middle', fontStyle: 'bold' } });
         }
 
         if (reportConfig.memberPhoto) {
-          row.push(m.photoUrl ? { content: 'View Photo', styles: { textColor: [0, 0, 255] }, url: m.photoUrl } : "N/A");
+          row.push(m.photoUrl ? { content: 'View Photo', styles: { textColor: [0, 0, 255], valign: 'middle' }, url: m.photoUrl } : { content: "N/A", styles: { valign: 'middle' } });
         }
         
-        row.push(m.name + (m.isLeader ? " (Leader)" : ""));
+        row.push({ content: m.name + (m.isLeader ? " (Leader)" : ""), styles: { valign: 'middle' } });
         
-        if (reportConfig.memberInstitute) row.push(m.organisation || "");
-        if (reportConfig.memberLocation) row.push(cleanLocation(m.location) || "");
-        if (reportConfig.memberTshirt) row.push(team.tshirtSizes?.[m.email] || "N/A");
+        if (reportConfig.memberInstitute) row.push({ content: m.organisation || "", styles: { valign: 'middle' } });
+        if (reportConfig.memberLocation) row.push({ content: cleanLocation(m.location) || "", styles: { valign: 'middle' } });
+        if (reportConfig.memberTshirt) row.push({ content: team.tshirtSizes?.[m.email] || "N/A", styles: { valign: 'middle', halign: 'center' } });
         
-        if (mIdx === 0) {
-          if (reportConfig.preferences) row.push(team.trackPreferences?.join(", ") || "N/A");
-          if (reportConfig.transactionId) row.push(team.transactionId || "N/A");
-          if (reportConfig.receiptUrl) {
-            row.push(team.receiptUrl ? { content: 'View Receipt', styles: { textColor: [0, 0, 255] }, url: team.receiptUrl } : "N/A");
+        if (reportConfig.preferences) {
+          if (mIdx === 0) {
+            row.push({ content: team.trackPreferences?.join(", ") || "N/A", rowSpan: members.length, styles: { valign: 'middle' } });
           }
-        } else {
-          if (reportConfig.preferences) row.push("");
-          if (reportConfig.transactionId) row.push("");
-          if (reportConfig.receiptUrl) row.push("");
+        }
+        
+        if (reportConfig.transactionId) {
+          if (mIdx === 0) {
+            row.push({ content: team.transactionId || "N/A", rowSpan: members.length, styles: { valign: 'middle' } });
+          }
+        }
+        
+        if (reportConfig.receiptUrl) {
+          if (mIdx === 0) {
+            row.push(team.receiptUrl ? { content: 'View Receipt', rowSpan: members.length, styles: { textColor: [0, 0, 255], valign: 'middle' }, url: team.receiptUrl } : { content: "N/A", rowSpan: members.length, styles: { valign: 'middle' } });
+          }
         }
 
         body.push(row);
@@ -364,10 +369,13 @@ export default function AdminRound2() {
       styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
       didDrawCell: (data) => {
         if (data.section === 'body') {
-          const colIndex = data.column.index;
-          const rawData = data.row.raw[colIndex];
-          if (rawData && typeof rawData === 'object' && rawData.url) {
-            doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: rawData.url });
+          if (data.row.raw.isTeamStart) {
+            doc.setLineWidth(0.6);
+            doc.setDrawColor(120, 120, 120);
+            doc.line(data.cell.x, data.cell.y, data.cell.x + data.cell.width, data.cell.y);
+          }
+          if (data.cell.raw && typeof data.cell.raw === 'object' && data.cell.raw.url) {
+            doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: data.cell.raw.url });
           }
         }
       }
