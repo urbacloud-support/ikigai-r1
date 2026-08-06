@@ -9,6 +9,7 @@ import pptRoutes from "./ppt.routes.js";
 import aiRoutes from "./ai.routes.js";
 import round2Routes, { TeamModel } from "./round2.routes.js";
 import notificationRoutes, { NotificationModel } from "./notification.routes.js";
+import mailingRoutes from "./mailing.routes.js";
 import { sendMail } from "./mailer.js";
 
 
@@ -42,6 +43,7 @@ app.use("/api/upload-ppt", pptRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/round2", round2Routes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin/mailing", mailingRoutes);
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -337,13 +339,13 @@ const ParticipantSchema = new mongoose.Schema(
 // Paid teams (paymentStatus: "paid") have reliable, consistent teamIds and are the source of truth.
 // Unpaid teams may have empty/null teamIds — handled gracefully via the sparse index.
 
-const Participant = mongoose.model("Participant", ParticipantSchema);
+const Participant = mongoose.models.Participant || mongoose.model("Participant", ParticipantSchema);
 
 const ShortlistedSchema = new mongoose.Schema({}, { strict: false, timestamps: true });
 const Shortlisted = mongoose.models.Shortlisted || mongoose.model("Shortlisted", ShortlistedSchema);
 
-const SessionChair = mongoose.model("SessionChair", SessionChairSchema);
-const Event = mongoose.model("Event", EventSchema);
+const SessionChair = mongoose.models.SessionChair || mongoose.model("SessionChair", SessionChairSchema);
+const Event = mongoose.models.Event || mongoose.model("Event", EventSchema);
 const otpStore = new Map(); // email -> { otp, expiresAt }
 const generateSimplePassword = (name) => {
   if (!name) return "care123";
