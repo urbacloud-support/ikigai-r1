@@ -2042,18 +2042,38 @@ app.get("/api/admin/events/:eventId/participants", async (req, res) => {
       const participants = await Participant.find({
         eventId: new mongoose.Types.ObjectId(eventId),
       })
-        .populate("assignedEvaluators", "name email phone")
-        .populate("assessments.evaluatorId", "name email phone");
+        .populate({ path: "assignedEvaluators", select: "name email phone", strictPopulate: false })
+        .populate({ path: "assessments.evaluatorId", select: "name email phone", strictPopulate: false });
 
       const trackMap = {};
       event.tracks.forEach((t) => {
         trackMap[t.id] = t.title;
       });
 
-      enriched = participants.map((p) => ({
-        ...p.toObject(),
-        trackName: trackMap[p.trackId] || "—",
-      }));
+      enriched = participants.map((pDoc) => {
+        const p = pDoc.toObject();
+        // Fallback for older Round 1 schemas that used member1_name instead of members array
+        if (!p.members || p.members.length === 0) {
+          if (p.member1_name) {
+            p.members = [
+              {
+                isLeader: true,
+                name: p.member1_name,
+                email: p.member1_email,
+                mobile: p.member1_mobile,
+                organisation: p.member1_organisation,
+                domain: p.member1_domain,
+                specialization: p.member1_specialization,
+                location: p.member1_location
+              }
+            ];
+          }
+        }
+        return {
+          ...p,
+          trackName: trackMap[p.trackId] || "—",
+        };
+      });
     }
 
     res.json({
