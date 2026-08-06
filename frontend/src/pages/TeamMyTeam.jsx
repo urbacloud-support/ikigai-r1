@@ -10,6 +10,7 @@ import {
   Camera,
   UploadCloud,
   Loader2,
+  Shirt,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -21,6 +22,17 @@ export default function TeamMyTeam() {
   const [uploadingFor, setUploadingFor] = useState(null);
   const fileInputRef = useRef(null);
   const [selectedMemberEmail, setSelectedMemberEmail] = useState("");
+  const [updatingTshirt, setUpdatingTshirt] = useState(null);
+  const [editingTshirt, setEditingTshirt] = useState({});
+  const [draftTshirt, setDraftTshirt] = useState({});
+
+  const toggleEditTshirt = (email) => {
+    if (!editingTshirt[email]) {
+      // Entering edit mode, initialize draft state
+      setDraftTshirt(prev => ({ ...prev, [email]: round2Status?.tshirtSizes?.[email] || "" }));
+    }
+    setEditingTshirt(prev => ({ ...prev, [email]: !prev[email] }));
+  };
 
   const fetchTeam = async () => {
     try {
@@ -93,6 +105,42 @@ export default function TeamMyTeam() {
   const triggerFileInput = (email) => {
     setSelectedMemberEmail(email);
     if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleTshirtUpdate = async (email) => {
+    const size = draftTshirt[email];
+    if (!size || !team) {
+      alert("Please select a size first.");
+      return;
+    }
+    setUpdatingTshirt(email);
+    try {
+      const res = await fetch(`${API_BASE}/api/round2/update-tshirt`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantId: team.participantId || team._id,
+          memberEmail: email,
+          size,
+          teamName: team.teamName,
+          leaderEmail: sessionStorage.getItem("care_email"),
+          eventId: team.eventId,
+          members: team.members
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchTeam(); // Refetch to get updated status
+        setEditingTshirt(prev => ({ ...prev, [email]: false }));
+      } else {
+        alert(data.message || "Failed to update T-shirt size.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error updating T-shirt size.");
+    } finally {
+      setUpdatingTshirt(null);
+    }
   };
 
   if (loading)
@@ -300,6 +348,58 @@ export default function TeamMyTeam() {
                           className="text-gray-400 shrink-0 mt-0.5"
                         />
                         <span className="line-clamp-1">{member.location}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-2 w-full">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <Shirt size={16} className="text-gray-400 shrink-0" />
+                        <span className="font-semibold text-gray-800">T-Shirt:</span>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          value={editingTshirt[member.email] ? draftTshirt[member.email] || "" : round2Status?.tshirtSizes?.[member.email] || ""}
+                          onChange={(e) => setDraftTshirt(prev => ({ ...prev, [member.email]: e.target.value }))}
+                          disabled={updatingTshirt === member.email || !editingTshirt[member.email]}
+                          className={`text-sm border rounded-md px-2 py-1.5 focus:ring-1 focus:ring-green-500 focus:outline-none transition-colors min-w-[100px] ${editingTshirt[member.email] ? 'border-green-300 bg-white' : 'border-gray-200 bg-gray-50 text-gray-600'}`}
+                        >
+                          <option value="">Select Size</option>
+                          <option value="S">S</option>
+                          <option value="M">M</option>
+                          <option value="L">L</option>
+                          <option value="XL">XL</option>
+                          <option value="XXL">XXL</option>
+                        </select>
+
+                        {!editingTshirt[member.email] && updatingTshirt !== member.email && (
+                          <button 
+                            onClick={() => toggleEditTshirt(member.email)}
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors px-2"
+                          >
+                            Change
+                          </button>
+                        )}
+                        
+                        {updatingTshirt === member.email && <Loader2 className="animate-spin text-green-600" size={16} />}
+                      </div>
+                    </div>
+
+                    {editingTshirt[member.email] && updatingTshirt !== member.email && (
+                      <div className="flex items-center gap-2 mt-1" style={{ paddingLeft: "5.5rem" }}>
+                        <button 
+                          onClick={() => handleTshirtUpdate(member.email)}
+                          className="text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-md shadow-sm transition"
+                        >
+                          Update
+                        </button>
+                        <button 
+                          onClick={() => toggleEditTshirt(member.email)}
+                          className="text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-1.5 rounded-md transition"
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
                   </div>
