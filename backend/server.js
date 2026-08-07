@@ -661,9 +661,10 @@ app.post("/api/auth/send-otp", async (req, res) => {
   }
   const chair = await SessionChair.findOne({ email }).lean();
   const student = await StudentCoordinator.findOne({ email }).lean();
+  const teamLeader = await TeamLeader.findOne({ email }).lean();
 
 
-  if (!chair && !student) {
+  if (!chair && !student && !teamLeader) {
     console.log("OTP failed for email:", email);
     return res.status(404).json({
       success: false,
@@ -679,15 +680,52 @@ app.post("/api/auth/send-otp", async (req, res) => {
   try {
 
     await sendMail({
-      from: `"HackEval" <${process.env.MAIL_USER}>`,
+      from: `"IKIGAI 2026" <${process.env.MAIL_USER}>`,
       to: email,
-      subject: "HackEval review platform Login OTP",
+      subject: "IKIGAI 2026 Verification OTP",
       html: `
-      <p>Hello,</p>
-      <p>Your <b>HackEval login OTP</b> is:</p>
-      <h2 style="letter-spacing:4px">${otp}</h2>
-      <p>This OTP is valid for <b>5 minutes</b>.</p>
-    `,
+      <div style="margin:0;padding:40px 20px;background:#f7f4ff;font-family:Arial,Helvetica,sans-serif;">
+        <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(123,44,191,0.12);">
+
+          <div style="background:linear-gradient(135deg,#7b2cbf,#c026d3,#ec4899);padding:30px 20px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;">
+              IKIGAI 2026
+            </h1>
+            <p style="margin:8px 0 0;color:#fdf4ff;font-size:15px;">
+              Verification Code
+            </p>
+          </div>
+
+          <div style="padding:35px 30px;color:#444;">
+            <p style="margin:0 0 18px;font-size:16px;">
+              Hello,
+            </p>
+
+            <p style="margin:0 0 25px;font-size:15px;line-height:1.7;">
+              Your verification OTP for the <strong>IKIGAI 2026</strong> application is:
+            </p>
+
+            <div style="background:#faf5ff;border:2px dashed #c026d3;border-radius:14px;padding:18px;text-align:center;margin:25px 0;">
+              <span style="font-size:34px;font-weight:700;letter-spacing:8px;color:#7b2cbf;">
+                ${otp}
+              </span>
+            </div>
+
+            <p style="margin:0;font-size:14px;color:#666;">
+              This OTP is valid for <strong>5 minutes</strong>.
+            </p>
+
+            <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
+
+            <p style="margin:0;font-size:14px;color:#777;">
+              Regards,<br>
+              <strong style="color:#7b2cbf;">Team IKIGAI 2026</strong>
+            </p>
+          </div>
+
+        </div>
+      </div>
+      `,
     });
 
     res.json({ success: true, message: "OTP sent to email" });
@@ -780,19 +818,36 @@ app.post("/api/auth/verify-otp", async (req, res) => {
 
 
   const chair = await SessionChair.findOne({ email });
-  if (!chair) {
-    return res.status(404).json({ success: false });
+  if (chair) {
+    return res.json({
+      success: true,
+      role: "sessionChair",
+      name: chair.name,
+      chair: {
+        email: chair.email,
+        eventId: chair.eventId,
+      },
+    });
   }
 
-  res.json({
-    success: true,
-    role: "sessionChair",
-    name: chair.name,
-    chair: {
-      email: chair.email,
-      eventId: chair.eventId,
-    },
-  });
+  const teamLeader = await TeamLeader.findOne({ email });
+  if (teamLeader) {
+    if (teamLeader.disableLoginAfter && new Date() >= new Date(teamLeader.disableLoginAfter)) {
+      return res.status(401).json({
+        success: false,
+        message: teamLeader.disableLoginMessage || "Registration window is now closed!"
+      });
+    }
+    return res.json({
+      success: true,
+      role: "teamLeader",
+      email: email,
+      name: teamLeader.name,
+      teamName: teamLeader.teamName
+    });
+  }
+
+  return res.status(404).json({ success: false });
 });
 // ADMIN: Update participant assessment (override)
 app.put("/api/admin/participants/:id/assessment", async (req, res) => {
@@ -3052,7 +3107,7 @@ if (process.env.NODE_ENV !== "test") {
 app.get("/api/admin/close-registration/list", async (req, res) => {
   try {
     const leaders = await TeamLeader.find({}).lean();
-    
+
     let ikigai2Db;
     if (process.env.MONGO_URI) {
       const uri2 = process.env.MONGO_URI.replace("/ikigai?", "/ikigai2?");
@@ -3064,13 +3119,13 @@ app.get("/api/admin/close-registration/list", async (req, res) => {
     const TeamModel = ikigai2Db.model("Team", TeamSchema, "teams");
 
     const teams = await TeamModel.find({}).lean();
-    
+
     const result = leaders.map(leader => {
       const pId = leader.participantId ? leader.participantId.toString() : null;
       const email = leader.email ? leader.email.toLowerCase() : null;
-      
-      const team = teams.find(t => 
-        (pId && t.participantId === pId) || 
+
+      const team = teams.find(t =>
+        (pId && t.participantId === pId) ||
         (email && t.leaderEmail && t.leaderEmail.toLowerCase() === email)
       );
 
@@ -3088,7 +3143,7 @@ app.get("/api/admin/close-registration/list", async (req, res) => {
     });
 
     res.json({ success: true, leaders: result });
-    
+
     if (process.env.MONGO_URI && ikigai2Db) {
       await ikigai2Db.close();
     }
@@ -3101,15 +3156,17 @@ app.get("/api/admin/close-registration/list", async (req, res) => {
 app.post("/api/admin/close-registration/update", async (req, res) => {
   try {
     const { updates, disableTime, disableMessage } = req.body;
-    
+
     for (const update of updates) {
       if (update.disabled) {
         await TeamLeader.updateOne(
           { _id: update.id },
-          { $set: { 
-            disableLoginAfter: disableTime ? new Date(disableTime) : null,
-            disableLoginMessage: disableMessage || "Registration window is now closed!"
-          }}
+          {
+            $set: {
+              disableLoginAfter: disableTime ? new Date(disableTime) : null,
+              disableLoginMessage: disableMessage || "Registration window is now closed!"
+            }
+          }
         );
       } else {
         await TeamLeader.updateOne(
