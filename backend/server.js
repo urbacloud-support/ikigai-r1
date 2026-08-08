@@ -2814,6 +2814,13 @@ app.post("/api/auth/change-password-direct", async (req, res) => {
       await chair.save();
       return res.json({ success: true, message: "Password updated successfully" });
     }
+    else if (role === "teamLeader" || role === "team") {
+      const teamLeader = await TeamLeader.findOne({ email: normalizedEmail });
+      if (!teamLeader) return res.status(404).json({ success: false, message: "User not found" });
+      teamLeader.passwordHash = hashed;
+      await teamLeader.save();
+      return res.json({ success: true, message: "Password updated successfully" });
+    }
     else {
       return res.status(400).json({ success: false, message: "Invalid role or operation not supported for this role" });
     }
