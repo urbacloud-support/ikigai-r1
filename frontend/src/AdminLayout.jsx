@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { Menu, CalendarDays, TrendingUp, Users, UserCheck, Rocket, Mail, Ban } from "lucide-react";
+import { Menu, CalendarDays, TrendingUp, Users, UserCheck, Rocket, Mail, Ban, BookOpen, Link as LinkIcon } from "lucide-react";
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -15,12 +15,16 @@ export default function AdminLayout() {
   if (path.includes("/round2")) activeTab = "round2";
   if (path.includes("/mailing")) activeTab = "mailing";
   if (path.includes("/close-registration")) activeTab = "close-registration";
+  if (path.includes("/problem-statements")) activeTab = "problem-statements";
+  if (path.includes("/assign-tracks")) activeTab = "assign-tracks";
 
   const navItems = [
     { id: "events", label: "Events", icon: CalendarDays, path: "/dashboard" },
     { id: "progress", label: "Progress", icon: TrendingUp, path: "/progress" },
     { id: "shortlist", label: "Shortlist", icon: UserCheck, path: "/shortlist" },
     { id: "round2", label: "Round 2", icon: Rocket, path: "/round2" },
+    { id: "problem-statements", label: "Problem Statements", icon: BookOpen, path: "/problem-statements" },
+    { id: "assign-tracks", label: "Assign Tracks", icon: LinkIcon, path: "/assign-tracks" },
     { id: "mailing", label: "Mailing Service", icon: Mail, path: "/mailing" },
     { id: "close-registration", label: "Close Registration", icon: Ban, path: "/close-registration" },
     { id: "users", label: "Users", icon: Users, path: "/users" },

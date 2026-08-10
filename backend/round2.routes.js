@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import multer from "multer";
 import cloudinary from "cloudinary";
 import { NotificationModel } from "./notification.routes.js";
+import { ProblemStatement } from "./problem-statements.routes.js";
+
 
 const router = express.Router();
 
@@ -27,6 +29,8 @@ const TeamSchema = new mongoose.Schema(
     transactionId: { type: String, default: "" },
     receiptUrl: { type: String, default: "" },
     status: { type: String, default: "Pending" }, // Pending, Approved, Contact
+    assignedTrack: { type: String, default: "" },
+    assignedProblemStatement: { type: String, default: "" },
     reopenAccess: {
       open: { type: Boolean, default: false },
       fields: { type: [String], default: [] },
@@ -247,7 +251,9 @@ router.get("/my-status", async (req, res) => {
       trackPreferences: registration.trackPreferences,
       tshirtSizes: registration.tshirtSizes,
       transactionId: registration.transactionId,
-      receiptUrl: registration.receiptUrl
+      receiptUrl: registration.receiptUrl,
+      assignedTrack: registration.assignedTrack,
+      assignedProblemStatement: registration.assignedProblemStatement
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -426,6 +432,63 @@ router.put("/update-tshirt", async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("Error updating t-shirt size:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// Choose Problem Statement (concurrent-safe)
+router.post('/choose-problem-statement', async (req, res) => {
+  try {
+    const { participantId, leaderEmail, eventId, trackId, statementId } = req.body;
+
+    const team = await TeamModel.findOne({ leaderEmail, status: 'Approved' });
+    if (!team) return res.status(400).json({ success: false, message: 'Team not found or not approved' });
+    if (team.assignedTrack !== trackId) return res.status(400).json({ success: false, message: 'Invalid track for this team' });
+    if (team.assignedProblemStatement) return res.status(400).json({ success: false, message: 'Problem statement already selected' });
+
+    // Atomic decrement
+    const ps = await ProblemStatement.findOneAndUpdate(
+      { eventId, trackId, 'statements': { $elemMatch: { id: statementId, limit: { $gt: 0 } } } },
+      { $inc: { 'statements.$.limit': -1 } },
+      { new: true }
+    );
+
+    if (!ps) return res.status(400).json({ success: false, message: 'Problem statement limit reached or not found' });
+
+    team.assignedProblemStatement = statementId;
+    await team.save();
+
+    res.json({ success: true, team });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// Get approved teams for an event
+router.get("/admin/approved-teams/:eventId", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const teams = await TeamModel.find({ eventId, status: "Approved" });
+    res.json({ success: true, teams });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// Assign track to team
+router.put("/admin/assign-track", async (req, res) => {
+  try {
+    const { teamId, assignedTrack } = req.body;
+    const team = await TeamModel.findByIdAndUpdate(teamId, { assignedTrack, assignedProblemStatement: "" }, { new: true });
+    if (team) {
+      res.json({ success: true, team });
+    } else {
+      res.status(404).json({ success: false, message: "Team not found" });
+    }
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });

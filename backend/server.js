@@ -11,6 +11,7 @@ import round2Routes, { TeamModel } from "./round2.routes.js";
 import notificationRoutes, { NotificationModel } from "./notification.routes.js";
 import mailingRoutes from "./mailing.routes.js";
 import { sendMail } from "./mailer.js";
+import problemStatementRoutes from "./problem-statements.routes.js";
 
 
 
@@ -44,6 +45,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/round2", round2Routes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin/mailing", mailingRoutes);
+app.use("/api/problem-statements", problemStatementRoutes);
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -206,7 +208,8 @@ const EventSchema = new mongoose.Schema(
     },
     allowComments: { type: Boolean, default: true },
     requireComments: { type: Boolean, default: false },
-    allowDirectTotal: { type: Boolean, default: true }
+    allowDirectTotal: { type: Boolean, default: true },
+    publishProblemStatements: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
@@ -2939,6 +2942,17 @@ app.get("/api/admin/team-leaders/:eventId", async (req, res) => {
   }
 });
 
+app.put("/api/admin/events/:eventId/publish-ps", async (req, res) => {
+  try {
+    const { publish } = req.body;
+    const ev = await Event.findByIdAndUpdate(req.params.eventId, { publishProblemStatements: publish }, { new: true });
+    if (!ev) return res.status(404).json({ success: false, message: "Event not found" });
+    res.json({ success: true, event: ev });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.post("/api/admin/team-leaders/send-mail", async (req, res) => {
   try {
     const { eventId, leaderIds } = req.body;
@@ -3115,16 +3129,6 @@ app.get("/api/admin/close-registration/list", async (req, res) => {
   try {
     const leaders = await TeamLeader.find({}).lean();
 
-    let ikigai2Db;
-    if (process.env.MONGO_URI) {
-      const uri2 = process.env.MONGO_URI.replace("/ikigai?", "/ikigai2?");
-      ikigai2Db = mongoose.createConnection(uri2);
-    } else {
-      ikigai2Db = mongoose.connection;
-    }
-    const TeamSchema = new mongoose.Schema({}, { strict: false });
-    const TeamModel = ikigai2Db.model("Team", TeamSchema, "teams");
-
     const teams = await TeamModel.find({}).lean();
 
     const result = leaders.map(leader => {
@@ -3151,9 +3155,6 @@ app.get("/api/admin/close-registration/list", async (req, res) => {
 
     res.json({ success: true, leaders: result });
 
-    if (process.env.MONGO_URI && ikigai2Db) {
-      await ikigai2Db.close();
-    }
   } catch (err) {
     console.error("Error fetching close registration list:", err);
     res.status(500).json({ success: false, message: "Server error" });

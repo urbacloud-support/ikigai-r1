@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { ExternalLink, Check, Mail, Eye, X, Unlock, Copy, Filter, Phone, MapPin, Building2, ChevronDown, FileText, Download } from "lucide-react";
+import { ExternalLink, Check, Mail, Eye, X, Unlock, Copy, Filter, Phone, MapPin, Building2, ChevronDown, FileText, Download, Search } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import ikigaiLogo from "./assets/ikigai.png";
@@ -254,6 +254,7 @@ export default function AdminRound2() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterCheckpoint, setFilterCheckpoint] = useState("All");
   const [filterSort, setFilterSort] = useState("Newest First");
+  const [filterSearch, setFilterSearch] = useState("");
   
   // Report Builder State
   const [showReportBuilder, setShowReportBuilder] = useState(false);
@@ -482,6 +483,17 @@ export default function AdminRound2() {
       if (leader?.location) locations.add(cleanLocation(leader.location));
     });
 
+    if (filterSearch.trim()) {
+      const lowerSearch = filterSearch.toLowerCase();
+      list = list.filter(team => {
+        const teamNameMatch = team.teamName?.toLowerCase().includes(lowerSearch);
+        const leader = team.members?.find(m => m.isLeader) || team.members?.[0];
+        const leaderNameMatch = leader?.name?.toLowerCase().includes(lowerSearch);
+        const leaderEmailMatch = team.leaderEmail?.toLowerCase().includes(lowerSearch);
+        return teamNameMatch || leaderNameMatch || leaderEmailMatch;
+      });
+    }
+
     if (filterCollege !== "All") {
       list = list.filter(team => {
         const leader = team.members?.find(m => m.isLeader) || team.members?.[0];
@@ -536,7 +548,7 @@ export default function AdminRound2() {
       uniqueColleges: Array.from(colleges).sort(), 
       uniqueLocations: Array.from(locations).sort() 
     };
-  }, [registrations, activeTrack, filterCollege, filterLocation, filterStatus, filterCheckpoint, filterSort]);
+  }, [registrations, activeTrack, filterCollege, filterLocation, filterStatus, filterCheckpoint, filterSort, filterSearch]);
 
   const allTracks = Object.keys(tracksCount);
 
@@ -584,6 +596,19 @@ export default function AdminRound2() {
         <div className="flex items-center gap-2 text-gray-800 font-bold text-lg border-b border-gray-100 pb-3">
           <Filter size={20} /> Filters & Sort
         </div>
+        
+        {/* Search Input */}
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search by team name, leader name, or email..." 
+            value={filterSearch}
+            onChange={(e) => setFilterSearch(e.target.value)}
+            className="w-full pl-10 pr-4 h-11 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition text-sm text-gray-700"
+          />
+        </div>
+
         <div className="flex flex-wrap gap-4">
           <CustomSelect 
             value={filterSort}
