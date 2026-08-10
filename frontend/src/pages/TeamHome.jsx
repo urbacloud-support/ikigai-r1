@@ -241,13 +241,10 @@ export default function TeamHome() {
                   });
                   if (round2Event && round2Event.publishProblemStatements) {
                     try {
-                      const psRes = await fetch(`${API_BASE}/api/problem-statements/${round2Event._id}`);
+                      const psRes = await fetch(`${API_BASE}/api/round2/available-statements?eventId=${round2Event._id}&trackId=${myData.assignedTrack}`);
                       const psData = await psRes.json();
                       if (psData.success) {
-                        const trackPS = psData.data.find(d => d.trackId === myData.assignedTrack);
-                        if (trackPS && trackPS.statements) {
-                          setAvailableProblemStatements(trackPS.statements.filter(s => s.limit > 0));
-                        }
+                        setAvailableProblemStatements(psData.statements.filter(s => s.left > 0));
                       }
                     } catch (e) {
                       console.error(e);
@@ -583,7 +580,7 @@ export default function TeamHome() {
                         {ps.text}
                       </div>
                       <div className="text-sm font-bold text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200">
-                        {ps.limit} left
+                        {ps.left} left
                       </div>
                     </div>
                   )) : (

@@ -447,20 +447,44 @@ router.post('/choose-problem-statement', async (req, res) => {
     if (team.assignedTrack !== trackId) return res.status(400).json({ success: false, message: 'Invalid track for this team' });
     if (team.assignedProblemStatement) return res.status(400).json({ success: false, message: 'Problem statement already selected' });
 
-    // Atomic decrement
-    const ps = await ProblemStatement.findOneAndUpdate(
-      { eventId, trackId, 'statements': { $elemMatch: { id: statementId, limit: { $gt: 0 } } } },
-      { $inc: { 'statements.$.limit': -1 } },
-      { new: true }
-    );
+    // Check limit without decrementing
+    const ps = await ProblemStatement.findOne({ eventId, trackId });
+    if (!ps) return res.status(400).json({ success: false, message: 'Problem statements not found for this track' });
 
-    if (!ps) return res.status(400).json({ success: false, message: 'Problem statement limit reached or not found' });
+    const statement = ps.statements.find(s => s.id === statementId);
+    if (!statement) return res.status(400).json({ success: false, message: 'Problem statement not found' });
+
+    const assignedCount = await TeamModel.countDocuments({ eventId, assignedProblemStatement: statementId });
+    
+    if (assignedCount >= statement.limit) {
+      return res.status(400).json({ success: false, message: 'Problem statement limit reached' });
+    }
 
     team.assignedProblemStatement = statementId;
     await team.save();
 
     res.json({ success: true, team });
   } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Get available problem statements with computed limits
+router.get("/available-statements", async (req, res) => {
+  try {
+    const { eventId, trackId } = req.query;
+    if (!eventId || !trackId) return res.status(400).json({ success: false });
+
+    const ps = await ProblemStatement.findOne({ eventId, trackId }).lean();
+    if (!ps) return res.json({ success: true, statements: [] });
+
+    for (const stmt of ps.statements) {
+      const count = await TeamModel.countDocuments({ eventId, assignedProblemStatement: stmt.id });
+      stmt.taken = count;
+      stmt.left = stmt.limit - count;
+    }
+    res.json({ success: true, statements: ps.statements });
+  } catch(err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });

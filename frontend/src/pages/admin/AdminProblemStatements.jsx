@@ -166,8 +166,15 @@ export default function AdminProblemStatements({ events = [] }) {
     if (statements.some(s => !s.text.trim())) {
       return alert("Problem statement text cannot be empty.");
     }
-    if (statements.some(s => s.limit < 0)) {
-      return alert("Limit cannot be negative.");
+    if (statements.some(s => s.limit === "" || s.limit < 0)) {
+      return alert("Limit must be a valid non-negative number.");
+    }
+    
+    for (const s of statements) {
+      const assigned = teams.filter(t => t.assignedProblemStatement === s.id).length;
+      if (s.limit < assigned) {
+        return alert(`Cannot save: Problem ${s.id} limit (${s.limit}) is less than currently assigned teams (${assigned}).`);
+      }
     }
 
     try {
@@ -332,12 +339,9 @@ export default function AdminProblemStatements({ events = [] }) {
                                         min={assignedTeams.length}
                                         value={stmt.limit}
                                         onChange={(e) => {
-                                          const newLimit = parseInt(e.target.value) || 0;
-                                          if (newLimit < assignedTeams.length) {
-                                            alert(`Cannot reduce limit below ${assignedTeams.length}. ${assignedTeams.length} teams have already chosen this problem statement.`);
-                                            return;
-                                          }
-                                          updateStatement(track.id, stmt.id, "limit", newLimit);
+                                          let val = e.target.value;
+                                          const newLimit = val === "" ? "" : parseInt(val);
+                                          updateStatement(track.id, stmt.id, "limit", isNaN(newLimit) && val !== "" ? 0 : newLimit);
                                         }}
                                         className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 outline-none"
                                       />

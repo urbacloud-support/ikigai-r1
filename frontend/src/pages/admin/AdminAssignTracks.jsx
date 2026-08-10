@@ -19,6 +19,8 @@ export default function AdminAssignTracks({ events = [] }) {
   const [filterInstitute, setFilterInstitute] = useState("");
   const [filterBranch, setFilterBranch] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
+  const [filterPrefRank, setFilterPrefRank] = useState("");
+  const [filterPrefTrack, setFilterPrefTrack] = useState("");
 
   useEffect(() => {
     const ev = events.find((e) => e._id === selectedEventId || e.id === selectedEventId);
@@ -234,6 +236,19 @@ export default function AdminAssignTracks({ events = [] }) {
       );
     }
 
+    // Filter by Track Preference
+    if (filterPrefTrack) {
+      if (filterPrefRank) {
+        const rankIndex = parseInt(filterPrefRank, 10) - 1;
+        result = result.filter(t => {
+          if (!t.trackPreferences || t.trackPreferences.length <= rankIndex) return false;
+          return t.trackPreferences[rankIndex] === filterPrefTrack;
+        });
+      } else {
+        result = result.filter(t => t.trackPreferences && t.trackPreferences.includes(filterPrefTrack));
+      }
+    }
+
     // Sort
     result.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
@@ -242,7 +257,7 @@ export default function AdminAssignTracks({ events = [] }) {
     });
 
     return result;
-  }, [teams, filterText, filterInstitute, filterBranch, filterLocation, sortOrder]);
+  }, [teams, filterText, filterInstitute, filterBranch, filterLocation, filterPrefRank, filterPrefTrack, sortOrder]);
 
   const assignedTeamsTotal = teams.filter((t) => t.assignedTrack).length;
   const unassignedTeamsTotal = processedUnassignedTeams.length;
@@ -407,6 +422,31 @@ export default function AdminAssignTracks({ events = [] }) {
                       onChange={(e) => setFilterLocation(e.target.value)}
                       className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500"
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select 
+                      value={filterPrefRank}
+                      onChange={(e) => setFilterPrefRank(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 bg-white"
+                    >
+                      <option value="">Any Rank</option>
+                      <option value="1">1st Preference</option>
+                      <option value="2">2nd Preference</option>
+                      <option value="3">3rd Preference</option>
+                      <option value="4">4th Preference</option>
+                      <option value="5">5th Preference</option>
+                    </select>
+                    
+                    <select
+                      value={filterPrefTrack}
+                      onChange={(e) => setFilterPrefTrack(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 bg-white"
+                    >
+                      <option value="">Any Track</option>
+                      {activeEvent?.tracks?.map(t => (
+                        <option key={t.id} value={t.title}>{t.title}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
