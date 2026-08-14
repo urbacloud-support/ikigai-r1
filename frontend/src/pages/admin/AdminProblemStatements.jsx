@@ -50,7 +50,7 @@ export default function AdminProblemStatements({ events = [] }) {
       if (data.success && data.data) {
         const psMap = {};
         data.data.forEach(ps => {
-          psMap[ps.trackId] = ps.statements || [];
+          psMap[ps.trackId] = { statements: ps.statements || [], sponsorDescription: ps.sponsorDescription || '' };
         });
         setProblemStatements(psMap);
         setOriginalProblemStatements(JSON.parse(JSON.stringify(psMap)));
@@ -69,8 +69,8 @@ export default function AdminProblemStatements({ events = [] }) {
   };
 
   const hasUnsavedChanges = (trackId) => {
-    const original = originalProblemStatements[trackId] || [];
-    const current = problemStatements[trackId] || [];
+    const original = originalProblemStatements[trackId] || { statements: [], sponsorDescription: '' };
+    const current = problemStatements[trackId] || { statements: [], sponsorDescription: '' };
     return JSON.stringify(original) !== JSON.stringify(current);
   };
 
@@ -82,7 +82,7 @@ export default function AdminProblemStatements({ events = [] }) {
         }
         setProblemStatements(prev => ({
           ...prev,
-          [trackId]: JSON.parse(JSON.stringify(originalProblemStatements[trackId] || []))
+          [trackId]: JSON.parse(JSON.stringify(originalProblemStatements[trackId] || { statements: [], sponsorDescription: '' }))
         }));
       }
       setExpandedTrackId(null);
@@ -93,7 +93,7 @@ export default function AdminProblemStatements({ events = [] }) {
         }
         setProblemStatements(prev => ({
           ...prev,
-          [expandedTrackId]: JSON.parse(JSON.stringify(originalProblemStatements[expandedTrackId] || []))
+          [expandedTrackId]: JSON.parse(JSON.stringify(originalProblemStatements[expandedTrackId] || { statements: [], sponsorDescription: '' }))
         }));
       }
       setExpandedTrackId(trackId);
@@ -111,7 +111,8 @@ export default function AdminProblemStatements({ events = [] }) {
   };
 
   const handleAddStatement = (trackId) => {
-    const currentStatements = problemStatements[trackId] || [];
+    const currentTrack = problemStatements[trackId] || { statements: [], sponsorDescription: '' };
+    const currentStatements = currentTrack.statements;
     const trackPrefix = getTwoDigitTrackId(trackId);
     
     // Find next available statement ID
@@ -130,12 +131,13 @@ export default function AdminProblemStatements({ events = [] }) {
 
     setProblemStatements({
       ...problemStatements,
-      [trackId]: [...currentStatements, newStatement]
+      [trackId]: { ...currentTrack, statements: [...currentStatements, newStatement] }
     });
   };
 
   const updateStatement = (trackId, id, field, value) => {
-    const currentStatements = problemStatements[trackId] || [];
+    const currentTrack = problemStatements[trackId] || { statements: [], sponsorDescription: '' };
+    const currentStatements = currentTrack.statements;
     const updated = currentStatements.map(s => {
       if (s.id === id) {
         return { ...s, [field]: value };
@@ -145,22 +147,33 @@ export default function AdminProblemStatements({ events = [] }) {
 
     setProblemStatements({
       ...problemStatements,
-      [trackId]: updated
+      [trackId]: { ...currentTrack, statements: updated }
     });
   };
 
   const removeStatement = (trackId, id) => {
-    const currentStatements = problemStatements[trackId] || [];
+    const currentTrack = problemStatements[trackId] || { statements: [], sponsorDescription: '' };
+    const currentStatements = currentTrack.statements;
     const updated = currentStatements.filter(s => s.id !== id);
     setProblemStatements({
       ...problemStatements,
-      [trackId]: updated
+      [trackId]: { ...currentTrack, statements: updated }
+    });
+  };
+
+  const updateSponsorDescription = (trackId, value) => {
+    const currentTrack = problemStatements[trackId] || { statements: [], sponsorDescription: "" };
+    setProblemStatements({
+      ...problemStatements,
+      [trackId]: { ...currentTrack, sponsorDescription: value }
     });
   };
 
   const handleSaveTrack = async (trackId) => {
     if (!activeEvent) return;
-    const statements = problemStatements[trackId] || [];
+    const currentTrack = problemStatements[trackId] || { statements: [], sponsorDescription: '' };
+    const statements = currentTrack.statements;
+    const sponsorDescription = currentTrack.sponsorDescription;
     
     // Validation
     if (statements.some(s => !s.text.trim())) {
@@ -185,6 +198,7 @@ export default function AdminProblemStatements({ events = [] }) {
           eventId: activeEvent._id || activeEvent.id,
           trackId,
           statements,
+          sponsorDescription,
         })
       });
       const data = await res.json();
@@ -192,7 +206,7 @@ export default function AdminProblemStatements({ events = [] }) {
         alert("Saved successfully");
         setOriginalProblemStatements(prev => ({
           ...prev,
-          [trackId]: JSON.parse(JSON.stringify(statements))
+          [trackId]: JSON.parse(JSON.stringify(currentTrack))
         }));
       } else {
         alert(data.message || "Failed to save");
@@ -207,7 +221,8 @@ export default function AdminProblemStatements({ events = [] }) {
   let globalTotal = 0;
   if (activeEvent && activeEvent.tracks) {
     activeEvent.tracks.forEach(track => {
-      const stmts = problemStatements[track.id] || [];
+      const currentTrack = problemStatements[track.id] || { statements: [], sponsorDescription: '' };
+      const stmts = currentTrack.statements;
       globalTotal += stmts.reduce((sum, s) => sum + (parseInt(s.limit) || 0), 0);
     });
   }
@@ -261,7 +276,9 @@ export default function AdminProblemStatements({ events = [] }) {
           <div className="space-y-4 pb-12">
             {activeEvent.tracks?.map((track) => {
               const isExpanded = expandedTrackId === track.id;
-              const trackStatements = problemStatements[track.id] || [];
+              const currentTrack = problemStatements[track.id] || { statements: [], sponsorDescription: '' };
+              const trackStatements = currentTrack.statements;
+              const trackSponsor = currentTrack.sponsorDescription;
               const trackCapacity = trackStatements.reduce((sum, s) => sum + (parseInt(s.limit) || 0), 0);
               const unsaved = hasUnsavedChanges(track.id);
 
@@ -295,6 +312,16 @@ export default function AdminProblemStatements({ events = [] }) {
                   {/* Expandable Content */}
                   {isExpanded && (
                     <div className="p-5 border-t border-gray-100 bg-gray-50/50">
+                      <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Sponsor Description (Optional)</label>
+                        <input
+                          type="text"
+                          value={trackSponsor}
+                          onChange={(e) => updateSponsorDescription(track.id, e.target.value)}
+                          placeholder="e.g. These problem statements are given by Company X"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 outline-none"
+                        />
+                      </div>
                       
                       {trackStatements.length === 0 ? (
                         <div className="text-center py-6 text-gray-400 italic bg-white rounded-lg border border-gray-100">

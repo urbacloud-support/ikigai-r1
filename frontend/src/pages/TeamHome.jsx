@@ -115,6 +115,7 @@ export default function TeamHome() {
   const [availableProblemStatements, setAvailableProblemStatements] = useState([]);
   const [selectedPS, setSelectedPS] = useState("");
   const [submittingPS, setSubmittingPS] = useState(false);
+  const [sponsorDescription, setSponsorDescription] = useState("");
 
   const handleSaveSequence = async () => {
     if (!teamInfo) {
@@ -245,6 +246,9 @@ export default function TeamHome() {
                       const psData = await psRes.json();
                       if (psData.success) {
                         setAvailableProblemStatements(psData.statements.filter(s => s.left > 0));
+                        if (psData.sponsorDescription) {
+                          setSponsorDescription(psData.sponsorDescription);
+                        }
                       }
                     } catch (e) {
                       console.error(e);
@@ -565,6 +569,11 @@ export default function TeamHome() {
               </div>
             ) : (
               <div>
+                {sponsorDescription && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6 text-purple-800 font-medium">
+                    {sponsorDescription}
+                  </div>
+                )}
                 <p className="text-gray-600 mb-6 text-lg">Choose one of the following problem statements:</p>
                 <div className="space-y-4">
                   {availableProblemStatements.length > 0 ? availableProblemStatements.map((ps) => (

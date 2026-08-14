@@ -483,7 +483,7 @@ router.get("/available-statements", async (req, res) => {
       stmt.taken = count;
       stmt.left = stmt.limit - count;
     }
-    res.json({ success: true, statements: ps.statements });
+    res.json({ success: true, statements: ps.statements, sponsorDescription: ps.sponsorDescription });
   } catch(err) {
     res.status(500).json({ success: false, message: err.message });
   }

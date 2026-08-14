@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 const problemStatementSchema = new mongoose.Schema({
   eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },
   trackId: { type: String, required: true },
+  sponsorDescription: { type: String, default: "" },
   statements: [{
     id: { type: String, required: true },
     text: { type: String, required: true },
@@ -28,13 +29,16 @@ router.get("/:eventId", async (req, res) => {
 // POST/PUT to save problem statements for an event and track
 router.post("/", async (req, res) => {
   try {
-    const { eventId, trackId, statements } = req.body;
+    const { eventId, trackId, statements, sponsorDescription } = req.body;
     let ps = await ProblemStatement.findOne({ eventId, trackId });
     if (ps) {
       ps.statements = statements;
+      if (sponsorDescription !== undefined) {
+        ps.sponsorDescription = sponsorDescription;
+      }
       await ps.save();
     } else {
-      ps = await ProblemStatement.create({ eventId, trackId, statements });
+      ps = await ProblemStatement.create({ eventId, trackId, statements, sponsorDescription });
     }
     res.json({ success: true, data: ps });
   } catch (error) {
