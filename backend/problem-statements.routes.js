@@ -30,16 +30,18 @@ router.get("/:eventId", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { eventId, trackId, statements, sponsorDescription } = req.body;
-    let ps = await ProblemStatement.findOne({ eventId, trackId });
-    if (ps) {
-      ps.statements = statements;
-      if (sponsorDescription !== undefined) {
-        ps.sponsorDescription = sponsorDescription;
-      }
-      await ps.save();
-    } else {
-      ps = await ProblemStatement.create({ eventId, trackId, statements, sponsorDescription });
+    
+    const updateData = { statements };
+    if (sponsorDescription !== undefined) {
+      updateData.sponsorDescription = sponsorDescription;
     }
+
+    const ps = await ProblemStatement.findOneAndUpdate(
+      { eventId, trackId },
+      updateData,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    
     res.json({ success: true, data: ps });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -11,6 +11,7 @@ export default function AdminProblemStatements({ events = [] }) {
   const [originalProblemStatements, setOriginalProblemStatements] = useState({});
   const [expandedTrackId, setExpandedTrackId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [savingTrackId, setSavingTrackId] = useState(null);
   const [teams, setTeams] = useState([]);
   const [editingStatementIds, setEditingStatementIds] = useState(new Set());
   const [expandedStatementId, setExpandedStatementId] = useState(null);
@@ -171,6 +172,7 @@ export default function AdminProblemStatements({ events = [] }) {
 
   const handleSaveTrack = async (trackId) => {
     if (!activeEvent) return;
+    setSavingTrackId(trackId);
     const currentTrack = problemStatements[trackId] || { statements: [], sponsorDescription: '' };
     const statements = currentTrack.statements;
     const sponsorDescription = currentTrack.sponsorDescription;
@@ -214,6 +216,8 @@ export default function AdminProblemStatements({ events = [] }) {
     } catch (error) {
       console.error("Save error:", error);
       alert("Error saving problem statements");
+    } finally {
+      setSavingTrackId(null);
     }
   };
 
@@ -439,13 +443,16 @@ export default function AdminProblemStatements({ events = [] }) {
                         
                         <button
                           onClick={() => handleSaveTrack(track.id)}
+                          disabled={savingTrackId === track.id}
                           className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition shadow-md ${
-                            unsaved 
+                            savingTrackId === track.id
+                              ? "bg-purple-400 text-white cursor-not-allowed"
+                              : unsaved 
                               ? "bg-amber-500 text-white hover:bg-amber-600 animate-pulse" 
                               : "bg-purple-600 text-white hover:bg-purple-700"
                           }`}
                         >
-                          <Save size={18} /> {unsaved ? "Save Changes" : "Save Track"}
+                          <Save size={18} /> {savingTrackId === track.id ? "Saving..." : (unsaved ? "Save Changes" : "Save Track")}
                         </button>
                       </div>
                     </div>
