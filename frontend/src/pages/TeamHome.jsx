@@ -570,7 +570,7 @@ export default function TeamHome() {
             ) : (
               <div>
                 {sponsorDescription && (
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6 text-purple-800 font-medium">
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6 text-purple-800 font-medium whitespace-pre-wrap">
                     {sponsorDescription}
                   </div>
                 )}

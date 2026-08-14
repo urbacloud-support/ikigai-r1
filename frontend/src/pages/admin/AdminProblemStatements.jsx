@@ -318,12 +318,12 @@ export default function AdminProblemStatements({ events = [] }) {
                     <div className="p-5 border-t border-gray-100 bg-gray-50/50">
                       <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Sponsor Description (Optional)</label>
-                        <input
-                          type="text"
+                        <textarea
                           value={trackSponsor}
                           onChange={(e) => updateSponsorDescription(track.id, e.target.value)}
                           placeholder="e.g. These problem statements are given by Company X"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 outline-none"
+                          rows={4}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 outline-none resize-y"
                         />
                       </div>
                       
