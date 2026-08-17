@@ -31,6 +31,8 @@ import AdminCloseRegistration from "./pages/admin/AdminCloseRegistration";
 import AdminProblemStatements from "./pages/admin/AdminProblemStatements";
 import AdminAssignTracks from "./pages/admin/AdminAssignTracks";
 import StudentDashboard from "./pages/StudentDashboard";
+import VolunteerConsole from "./pages/volunteer/VolunteerConsole";
+import AdminEntryVerification from "./pages/admin/AdminEntryVerification";
 import TeamLayout from "./pages/TeamLayout";
 import TeamHome from "./pages/TeamHome";
 import TeamMyTeam from "./pages/TeamMyTeam";
@@ -90,7 +92,7 @@ function ChangePasswordModal({ user, onClose }) {
       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Change Password</h2>
         <p className="text-gray-500 mb-6 text-sm">Securely update your password.</p>
-        
+
         {success ? (
           <div className="bg-green-100 text-green-700 p-4 rounded-xl text-center font-semibold">
             Password updated successfully!
@@ -118,7 +120,7 @@ function ChangePasswordModal({ user, onClose }) {
               />
             </div>
             {error && <div className="text-red-500 text-sm">{error}</div>}
-            
+
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
@@ -148,7 +150,7 @@ function Header({ user, onLogout }) {
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  
+
   const profileMenuRef = useRef(null);
   const notifMenuRef = useRef(null);
 
@@ -166,87 +168,87 @@ function Header({ user, onLogout }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  
-  const displayRole = user.role === "sessionChair" ? "Evaluator" : user.role === "studentCoordinator" ? "Student Coordinator" : user.role === "teamLeader" ? "Team Leader" : "Admin";
+
+  const displayRole = user.role === "sessionChair" ? "Evaluator" : user.role === "studentCoordinator" ? "Student Coordinator" : user.role === "studentVolunteer" ? "Student Volunteer" : user.role === "teamLeader" ? "Team Leader" : "Admin";
 
   return (
     <>
-    <header className="w-full bg-white/70 backdrop-blur-md border-b border-green-200 shadow-sm relative z-50">
-      <div className="flex items-center justify-between px-4 md:px-6 py-3 md:h-20">
+      <header className="w-full bg-white/70 backdrop-blur-md border-b border-green-200 shadow-sm relative z-50">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:h-20">
 
-        <div className="flex items-center min-w-0 w-1/2">
-  {/* LOGO */}
-  <img
-    src={ikigaiLogo}
-    alt="Hackathon Logo"
-    className="h-12 md:h-16 object-contain w-auto max-w-full"
-  />
-</div>
-
-
-        <div className="flex items-center gap-2 relative">
-          {user.role !== "admin" && (
-            <NotificationCenter 
-              userEmail={user.email} 
-              onOpenPasswordModal={() => setShowPasswordModal(true)} 
+          <div className="flex items-center min-w-0 w-1/2">
+            {/* LOGO */}
+            <img
+              src={ikigaiLogo}
+              alt="Hackathon Logo"
+              className="h-12 md:h-16 object-contain w-auto max-w-full"
             />
-          )}
-          <div className="relative" ref={profileMenuRef}>
-            <button
-              onClick={() => setOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-full px-3 py-2 hover:bg-green-50"
-              aria-haspopup="true"
-              aria-expanded={open}
-            >
-              <div className="w-10 h-10 bg-green-600 text-white flex items-center justify-center rounded-full font-semibold">
-                {user.name[0]?.toUpperCase() || "U"}
-              </div>
-              <div className="hidden sm:flex flex-col text-left">
-                <span className="text-sm font-semibold">{user.name}</span>
-                {user.role !== "admin" && (
-                  <span className="text-xs text-green-700 capitalize">{displayRole}</span>
-                )}
-              </div>
-            </button>
-  
-            {open && (
-              <div className="absolute right-0 top-14 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                  <p className="text-sm font-bold text-gray-800 truncate">{user.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{user.email || "No email"}</p>
+          </div>
+
+
+          <div className="flex items-center gap-2 relative">
+            {user.role !== "admin" && (
+              <NotificationCenter
+                userEmail={user.email}
+                onOpenPasswordModal={() => setShowPasswordModal(true)}
+              />
+            )}
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                onClick={() => setOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-full px-3 py-2 hover:bg-green-50"
+                aria-haspopup="true"
+                aria-expanded={open}
+              >
+                <div className="w-10 h-10 bg-green-600 text-white flex items-center justify-center rounded-full font-semibold">
+                  {user.name[0]?.toUpperCase() || "U"}
+                </div>
+                <div className="hidden sm:flex flex-col text-left">
+                  <span className="text-sm font-semibold">{user.name}</span>
                   {user.role !== "admin" && (
-                    <p className="text-xs font-semibold text-green-600 mt-1 capitalize">{displayRole}</p>
+                    <span className="text-xs text-green-700 capitalize">{displayRole}</span>
                   )}
                 </div>
-                <div className="py-1">
-                  {user.role !== "admin" && (
+              </button>
+
+              {open && (
+                <div className="absolute right-0 top-14 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                    <p className="text-sm font-bold text-gray-800 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email || "No email"}</p>
+                    {user.role !== "admin" && (
+                      <p className="text-xs font-semibold text-green-600 mt-1 capitalize">{displayRole}</p>
+                    )}
+                  </div>
+                  <div className="py-1">
+                    {user.role !== "admin" && (
+                      <button
+                        onClick={() => {
+                          setOpen(false);
+                          setShowPasswordModal(true);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                      >
+                        Change Password
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setOpen(false);
-                        setShowPasswordModal(true);
+                        onLogout();
                       }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                      className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium"
                     >
-                      Change Password
+                      Logout
                     </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setOpen(false);
-                      onLogout();
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium"
-                  >
-                    Logout
-                  </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
-    {showPasswordModal && <ChangePasswordModal user={user} onClose={() => setShowPasswordModal(false)} />}
+      </header>
+      {showPasswordModal && <ChangePasswordModal user={user} onClose={() => setShowPasswordModal(false)} />}
     </>
   );
 }
@@ -257,24 +259,24 @@ function Dashboard({ events, refreshEvents }) {
   const [sessionChairCounts, setSessionChairCounts] = useState({});
 
   useEffect(() => {
-  fetch(`${API_BASE}/api/admin/events/participant-counts`)
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) {
-        setParticipantCounts(data.counts || {});
-      }
-    });
-}, []);
+    fetch(`${API_BASE}/api/admin/events/participant-counts`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setParticipantCounts(data.counts || {});
+        }
+      });
+  }, []);
 
-useEffect(() => {
-  fetch(`${API_BASE}/api/admin/events/session-chair-counts`)
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) {
-        setSessionChairCounts(data.counts || {});
-      }
-    });
-}, []);
+  useEffect(() => {
+    fetch(`${API_BASE}/api/admin/events/session-chair-counts`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setSessionChairCounts(data.counts || {});
+        }
+      });
+  }, []);
 
   return (
     <main className="flex-1 px-6 py-6 w-full">
@@ -300,76 +302,76 @@ useEffect(() => {
             ).reduce((acc, list) => acc + (list?.length || 0), 0);
             return (
               <div
-  key={ev._id || ev.id}
-  className="bg-white border border-green-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition"
->
-  <div className="flex items-start justify-between gap-6">
+                key={ev._id || ev.id}
+                className="bg-white border border-green-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition"
+              >
+                <div className="flex items-start justify-between gap-6">
 
-    {/* LEFT: Event Info */}
-    <div className="flex-1 min-w-0">
-      <h3 className="text-xl font-semibold text-green-700 truncate">
-        {ev.title}
-      </h3>
+                  {/* LEFT: Event Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-semibold text-green-700 truncate">
+                      {ev.title}
+                    </h3>
 
-      <p className="text-sm text-gray-600 mt-1 line-clamp-2 text-justify">
-        {ev.description || "No description available for this event."}
-      </p>
+                    <p className="text-sm text-gray-600 mt-1 line-clamp-2 text-justify">
+                      {ev.description || "No description available for this event."}
+                    </p>
 
-      <p className="text-sm text-gray-500 mt-2">
-        Date: {ev.date || "—"}
-      </p>
-    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Date: {ev.date || "—"}
+                    </p>
+                  </div>
 
-    {/* RIGHT: Stats + Actions */}
-    <div className="flex flex-col items-end gap-4 shrink-0">
+                  {/* RIGHT: Stats + Actions */}
+                  <div className="flex flex-col items-end gap-4 shrink-0">
 
-      {/* STATS */}
-      <div className="flex items-center gap-6">
-        <div className="text-center">
-          <div className="text-xs uppercase tracking-wide text-gray-500">
-            Tracks
-          </div>
-          <div className="text-lg font-semibold text-gray-800">
-            {ev.tracks?.length || 0}
-          </div>
-        </div>
+                    {/* STATS */}
+                    <div className="flex items-center gap-6">
+                      <div className="text-center">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Tracks
+                        </div>
+                        <div className="text-lg font-semibold text-gray-800">
+                          {ev.tracks?.length || 0}
+                        </div>
+                      </div>
 
-        <div className="text-center">
-          <div className="text-xs uppercase tracking-wide text-gray-500">
-            Chairs
-          </div>
-          <div className="text-lg font-semibold text-gray-800">
-            {sessionChairCounts[ev._id || ev.id] || 0}
-          </div>
-        </div>
+                      <div className="text-center">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Chairs
+                        </div>
+                        <div className="text-lg font-semibold text-gray-800">
+                          {sessionChairCounts[ev._id || ev.id] || 0}
+                        </div>
+                      </div>
 
-        <div className="text-center">
-          <div className="text-xs uppercase tracking-wide text-gray-500">
-            Participants
-          </div>
-          <div className="text-lg font-semibold text-gray-800">
-            {participantCounts[ev._id || ev.id] || 0}
-          </div>
-        </div>
-      </div>
+                      <div className="text-center">
+                        <div className="text-xs uppercase tracking-wide text-gray-500">
+                          Participants
+                        </div>
+                        <div className="text-lg font-semibold text-gray-800">
+                          {participantCounts[ev._id || ev.id] || 0}
+                        </div>
+                      </div>
+                    </div>
 
-      <div className="flex gap-3">
-        <Link
-          to={`/event/${ev._id || ev.id}`}
-          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-semibold"
-        >
-          View Details
-        </Link>
-<Link
-    to={`/admin/events/${ev._id || ev.id}/participants`}
-    className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-md text-sm font-semibold"
-  >
-    View Participants
-  </Link>
-      </div>
-    </div>
-  </div>
-</div>
+                    <div className="flex gap-3">
+                      <Link
+                        to={`/event/${ev._id || ev.id}`}
+                        className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-semibold"
+                      >
+                        View Details
+                      </Link>
+                      <Link
+                        to={`/admin/events/${ev._id || ev.id}/participants`}
+                        className="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-md text-sm font-semibold"
+                      >
+                        View Participants
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
             );
           })
@@ -410,7 +412,7 @@ function CreateEvent({
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [scByTrack, setScByTrack] = useState({});
-const [scLoading, setScLoading] = useState(false);
+  const [scLoading, setScLoading] = useState(false);
 
 
   const markDirty = () => setIsDirty(true);
@@ -426,35 +428,35 @@ const [scLoading, setScLoading] = useState(false);
     );
   };
 
-useEffect(() => {
-  if (!isEdit || !editEventId || !Array.isArray(events)) return;
+  useEffect(() => {
+    if (!isEdit || !editEventId || !Array.isArray(events)) return;
 
-  const ev = events.find(
-    (e) => e._id === editEventId || e.id === editEventId
-  );
+    const ev = events.find(
+      (e) => e._id === editEventId || e.id === editEventId
+    );
 
-  if (!ev) return;
+    if (!ev) return;
 
-  setEvent({
-    _id: ev._id,
-    id: ev._id || ev.id,
-    title: ev.title || "",
-    description: ev.description || "",
-    date: ev.date || "",
-    tracks: Array.isArray(ev.tracks)
-    ? ev.tracks.map((t, idx) => ({
-        _id: t._id,
-        id: t.id || String(idx + 1).padStart(3, "0"), // 🔥 ENSURE UI ID
-        title: t.title,
-        description: t.description,
-      }))
-    : [],
+    setEvent({
+      _id: ev._id,
+      id: ev._id || ev.id,
+      title: ev.title || "",
+      description: ev.description || "",
+      date: ev.date || "",
+      tracks: Array.isArray(ev.tracks)
+        ? ev.tracks.map((t, idx) => ({
+          _id: t._id,
+          id: t.id || String(idx + 1).padStart(3, "0"), // 🔥 ENSURE UI ID
+          title: t.title,
+          description: t.description,
+        }))
+        : [],
 
-    sessionChairs: [],            // will be loaded at step 3
-    studentCoordinators: [],      // will be loaded at step 4
-    participants: ev.participants || {},
-  });
-}, [isEdit, editEventId, events]);
+      sessionChairs: [],            // will be loaded at step 3
+      studentCoordinators: [],      // will be loaded at step 4
+      participants: ev.participants || {},
+    });
+  }, [isEdit, editEventId, events]);
 
 
   // main event object (local while creating)
@@ -469,51 +471,51 @@ useEffect(() => {
     studentCoordinators: [], // {id,name,email,phone,trackId,password}
   });
 
-  
+
 
   const [successMessage, setSuccessMessage] = useState("");
   // 🔥 Auto-save helper for EDIT mode (prevents data loss on refresh)
-const persistEditEvent = async (updatedEvent) => {
-  if (!isEdit) return;
-  if (!updatedEvent._id) return;
-  if (activeStep !== 2) return;
+  const persistEditEvent = async (updatedEvent) => {
+    if (!isEdit) return;
+    if (!updatedEvent._id) return;
+    if (activeStep !== 2) return;
 
-  await fetch(`${API_BASE}/api/admin/events/${updatedEvent._id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tracks: updatedEvent.tracks, // ✅ ONLY TRACKS
-    }),
-  });
-};
+    await fetch(`${API_BASE}/api/admin/events/${updatedEvent._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tracks: updatedEvent.tracks, // ✅ ONLY TRACKS
+      }),
+    });
+  };
 
 
-const persistFullEditEvent = async (updatedEvent) => {
-  if (!isEdit) return;
-  if (!updatedEvent._id) return;
+  const persistFullEditEvent = async (updatedEvent) => {
+    if (!isEdit) return;
+    if (!updatedEvent._id) return;
 
-  console.log("🔵 FULL EDIT SAVE", updatedEvent._id);
+    console.log("🔵 FULL EDIT SAVE", updatedEvent._id);
 
-  await fetch(`${API_BASE}/api/admin/events/${updatedEvent._id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      title: updatedEvent.title,
-      description: updatedEvent.description,
-      date: updatedEvent.date,
-      tracks: updatedEvent.tracks,
-      sessionChairs: updatedEvent.sessionChairs.map(c => ({
-        _id: c._id || undefined, // 🔥 preserve existing DB id
-        name: c.name,
-        email: c.email,
-        phone: c.phone,
-        type: c.type,
-        trackId: c.trackId,
-      })),
-      studentCoordinators: updatedEvent.studentCoordinators,
-    }),
-  });
-};
+    await fetch(`${API_BASE}/api/admin/events/${updatedEvent._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: updatedEvent.title,
+        description: updatedEvent.description,
+        date: updatedEvent.date,
+        tracks: updatedEvent.tracks,
+        sessionChairs: updatedEvent.sessionChairs.map(c => ({
+          _id: c._id || undefined, // 🔥 preserve existing DB id
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          type: c.type,
+          trackId: c.trackId,
+        })),
+        studentCoordinators: updatedEvent.studentCoordinators,
+      }),
+    });
+  };
 
 
   /* ---------------------------- Step 1 (Basic) ---------------------------- */
@@ -524,47 +526,47 @@ const persistFullEditEvent = async (updatedEvent) => {
   const [tDesc, setTDesc] = useState("");
   const [editingTrackId, setEditingTrackId] = useState(null);
   const getNextTrackId = () => {
-  const existingIds = event.tracks
-    .map((t) => parseInt(t.id, 10))
-    .filter((n) => !isNaN(n));
+    const existingIds = event.tracks
+      .map((t) => parseInt(t.id, 10))
+      .filter((n) => !isNaN(n));
 
-  const next = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
-  return next.toString().padStart(3, "0");
-};
+    const next = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+    return next.toString().padStart(3, "0");
+  };
 
 
 
   const addTrack = () => {
     markDirty()
-  if (!tTitle.trim() || !tDesc.trim()) {
-    alert("Track title and description are required.");
-    return;
-  }
+    if (!tTitle.trim() || !tDesc.trim()) {
+      alert("Track title and description are required.");
+      return;
+    }
 
-  const id = getNextTrackId();
+    const id = getNextTrackId();
 
-  const newTrack = {
-    id,
-    title: tTitle.trim(),
-    description: tDesc.trim(),
-   
+    const newTrack = {
+      id,
+      title: tTitle.trim(),
+      description: tDesc.trim(),
+
+    };
+
+    setEvent((ev) => {
+      const updated = { ...ev, tracks: [...ev.tracks, newTrack] };
+      persistEditEvent(updated); // auto-save in edit mode
+      return updated;
+    });
+
+    setTTitle("");
+    setTDesc("");
   };
 
-  setEvent((ev) => {
-    const updated = { ...ev, tracks: [...ev.tracks, newTrack] };
-    persistEditEvent(updated); // auto-save in edit mode
-    return updated;
-  });
-
-  setTTitle("");
-  setTDesc("");
-};
-
-const editTrack = (track) => {
-  setEditingTrackId(track.id);
-  setTTitle(track.title);
-  setTDesc(track.description);
-};
+  const editTrack = (track) => {
+    setEditingTrackId(track.id);
+    setTTitle(track.title);
+    setTDesc(track.description);
+  };
 
 
 
@@ -572,130 +574,130 @@ const editTrack = (track) => {
     markDirty()
     if (!confirm("Delete track and its participants/chairs?")) return;
     setEvent((ev) => {
-  const updated = {
-    ...ev,
-    tracks: ev.tracks.filter((tr) => tr.id !== id),
-    sessionChairs: ev.sessionChairs.filter((ch) => ch.trackId !== id),
-    participants: Object.fromEntries(
-      Object.entries(ev.participants || {}).filter(([k]) => k !== id)
-    ),
-  };
+      const updated = {
+        ...ev,
+        tracks: ev.tracks.filter((tr) => tr.id !== id),
+        sessionChairs: ev.sessionChairs.filter((ch) => ch.trackId !== id),
+        participants: Object.fromEntries(
+          Object.entries(ev.participants || {}).filter(([k]) => k !== id)
+        ),
+      };
 
 
-  persistEditEvent(updated);   // 🔥 SAVE IMMEDIATELY
-  return updated;
-});
+      persistEditEvent(updated);   // 🔥 SAVE IMMEDIATELY
+      return updated;
+    });
 
   };
 
   const updateTrack = () => {
     markDirty()
-  if (!editingTrackId) return;
+    if (!editingTrackId) return;
 
-  setEvent((ev) => ({
-    ...ev,
-    tracks: ev.tracks.map((t) =>
-      t.id === editingTrackId
-        ? {
+    setEvent((ev) => ({
+      ...ev,
+      tracks: ev.tracks.map((t) =>
+        t.id === editingTrackId
+          ? {
             ...t,                     // ✅ preserves ID
             title: tTitle.trim(),
             description: tDesc.trim(),
           }
-        : t
-    ),
-  }));
+          : t
+      ),
+    }));
 
-  setEditingTrackId(null);
-  setTTitle("");
-  setTDesc("");
-};
+    setEditingTrackId(null);
+    setTTitle("");
+    setTDesc("");
+  };
 
 
   const step2Valid = event.tracks.length > 0;
 
   /* -------------------------- Step 3 (Session Chairs) ---------------------- */
-// 🔥 STEP 4 – Load Student Coordinators in EDIT mode
-useEffect(() => {
-  if (!isEdit || !event._id || activeStep !== 4) return;
-
-  fetch(`${API_BASE}/api/admin/events/${event._id}`)
-    .then(res => res.json())
-    .then(data => {
-      if (!data?.event?.studentCoordinators) return;
-
-      setEvent(ev => ({
-        ...ev,
-        studentCoordinators: data.event.studentCoordinators.map(sc => {
-          const uiTrack = ev.tracks.find(
-            tr => String(tr._id) === String(sc.trackId)
-          );
-
-          return {
-            _id: sc._id,
-            id: sc._id,
-            name: sc.name,
-            email: sc.email,
-            phone: sc.phone,
-            password: "",
-            trackId: uiTrack ? uiTrack.id : null, // ✅ now valid
-          };
-        }),
-      }));
-    });
-}, [isEdit, event._id, activeStep]);
-
-
-useEffect(() => {
-  if (!isEdit || activeStep !== 4 || !event._id) return;
-
-  const load = async () => {
-    setScLoading(true);
-    const map = {};
-
-    for (const tr of event.tracks) {
-      try {
-        const res = await fetch(
-          `${API_BASE}/api/admin/student-coordinator?eventId=${event._id}&trackId=${tr.id}`
-        );
-        const data = await res.json();
-
-        map[tr.id] = data.coordinator; // may be null
-      } catch (err) {
-        console.error("SC fetch failed:", tr.id, err);
-        map[tr.id] = null;
-      }
-    }
-
-    setScByTrack(map);
-    setScLoading(false);
-  };
-
-  load();
-}, [isEdit, activeStep, event._id, event.tracks]);
-
+  // 🔥 STEP 4 – Load Student Coordinators in EDIT mode
   useEffect(() => {
-  if (!isEdit || !event._id || activeStep !== 3) return;
+    if (!isEdit || !event._id || activeStep !== 4) return;
 
-  fetch(`${API_BASE}/api/admin/session-chairs/${event._id}`)
-    .then(res => res.json())
-    .then(data => {
-      if (Array.isArray(data.chairs)) {
+    fetch(`${API_BASE}/api/admin/events/${event._id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data?.event?.studentCoordinators) return;
+
         setEvent(ev => ({
           ...ev,
-          sessionChairs: data.chairs.map(ch => ({
-          _id: ch._id,        // DB id
-          id: ch._id,         // keep for UI consistency
-          name: ch.name,
-          email: ch.email,
-          phone: ch.phone,
-          type: ch.type,
-          trackId: ch.trackId,
-          password: "",
-        }))
+          studentCoordinators: data.event.studentCoordinators.map(sc => {
+            const uiTrack = ev.tracks.find(
+              tr => String(tr._id) === String(sc.trackId)
+            );
+
+            return {
+              _id: sc._id,
+              id: sc._id,
+              name: sc.name,
+              email: sc.email,
+              phone: sc.phone,
+              password: "",
+              trackId: uiTrack ? uiTrack.id : null, // ✅ now valid
+            };
+          }),
         }));
+      });
+  }, [isEdit, event._id, activeStep]);
+
+
+  useEffect(() => {
+    if (!isEdit || activeStep !== 4 || !event._id) return;
+
+    const load = async () => {
+      setScLoading(true);
+      const map = {};
+
+      for (const tr of event.tracks) {
+        try {
+          const res = await fetch(
+            `${API_BASE}/api/admin/student-coordinator?eventId=${event._id}&trackId=${tr.id}`
+          );
+          const data = await res.json();
+
+          map[tr.id] = data.coordinator; // may be null
+        } catch (err) {
+          console.error("SC fetch failed:", tr.id, err);
+          map[tr.id] = null;
+        }
       }
-    });
-}, [isEdit, event._id, activeStep]);
+
+      setScByTrack(map);
+      setScLoading(false);
+    };
+
+    load();
+  }, [isEdit, activeStep, event._id, event.tracks]);
+
+  useEffect(() => {
+    if (!isEdit || !event._id || activeStep !== 3) return;
+
+    fetch(`${API_BASE}/api/admin/session-chairs/${event._id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.chairs)) {
+          setEvent(ev => ({
+            ...ev,
+            sessionChairs: data.chairs.map(ch => ({
+              _id: ch._id,        // DB id
+              id: ch._id,         // keep for UI consistency
+              name: ch.name,
+              email: ch.email,
+              phone: ch.phone,
+              type: ch.type,
+              trackId: ch.trackId,
+              password: "",
+            }))
+          }));
+        }
+      });
+  }, [isEdit, event._id, activeStep]);
 
   const [chairForm, setChairForm] = useState({
     id: "",
@@ -708,36 +710,36 @@ useEffect(() => {
   });
 
   const [studentForm, setStudentForm] = useState({
-  id: "",
-  name: "",
-  email: "",
-  phone: "",
-  password: "",
-  trackId: "",
-});
+    id: "",
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    trackId: "",
+  });
 
-const genStudentId = () =>
-  `SC${(event.studentCoordinators.length + 1)
-    .toString()
-    .padStart(3, "0")}`;
+  const genStudentId = () =>
+    `SC${(event.studentCoordinators.length + 1)
+      .toString()
+      .padStart(3, "0")}`;
 
-const genStudentPassword = (name) => {
-  if (!name) return "";
-  return name.split(" ")[0].toLowerCase() + "123";
-};
+  const genStudentPassword = (name) => {
+    if (!name) return "";
+    return name.split(" ")[0].toLowerCase() + "123";
+  };
 
 
   const emailValid = (em) => /\S+@\S+\.\S+/.test(em);
   const phoneValid = (ph) => /^\d{10}$/.test(ph);
 
   const genChairId = () => {
-  const nums = event.sessionChairs
-    .map(c => parseInt(c.id?.replace("SCH", ""), 10))
-    .filter(n => !isNaN(n));
+    const nums = event.sessionChairs
+      .map(c => parseInt(c.id?.replace("SCH", ""), 10))
+      .filter(n => !isNaN(n));
 
-  const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
-  return `SCH${next.toString().padStart(3, "0")}`;
-};
+    const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+    return `SCH${next.toString().padStart(3, "0")}`;
+  };
 
 
   const genAutoPassword = (name) => {
@@ -841,106 +843,106 @@ const genStudentPassword = (name) => {
     }));
   };
 
-const addStudentCoordinator = async () => {
-  const { name, email, phone, password, trackId } = studentForm;
+  const addStudentCoordinator = async () => {
+    const { name, email, phone, password, trackId } = studentForm;
 
-  if (!name || !email || !phone || !trackId) {
-    alert("All fields required");
-    return;
-  }
+    if (!name || !email || !phone || !trackId) {
+      alert("All fields required");
+      return;
+    }
 
-  const res = await fetch(`${API_BASE}/api/admin/student-coordinator`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    name,
-    email,
-    phone,
-    password,
-    eventId: event._id,
-    trackId,
-  }),
-});
+    const res = await fetch(`${API_BASE}/api/admin/student-coordinator`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        password,
+        eventId: event._id,
+        trackId,
+      }),
+    });
 
-const data = await res.json();
+    const data = await res.json();
 
-if (!res.ok || !data.success) {
-  alert(data.message || "Failed to add student coordinator");
-  return;
-}
+    if (!res.ok || !data.success) {
+      alert(data.message || "Failed to add student coordinator");
+      return;
+    }
 
-  setScByTrack(prev => ({
-    ...prev,
-    [trackId]: data.coordinator,
-  }));
+    setScByTrack(prev => ({
+      ...prev,
+      [trackId]: data.coordinator,
+    }));
 
-  setStudentForm({
-    id: "",
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    trackId: "",
-  });
-};
-
-
-const editStudent = (id) => {
-  const s = event.studentCoordinators.find((x) => x.id === id);
-  if (s) setStudentForm({ ...s });
-};
-
-const updateStudent = async () => {
-  const { id, name, email, phone, password, trackId } = studentForm;
-
-  if (!id) return alert("Invalid student");
-
-  await fetch(`${API_BASE}/api/admin/student-coordinator`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id,
-      name,
-      email,
-      phone,
-      password: password || undefined, // 🔐 update only if provided
-      eventId: event._id,
-      trackId,
-    }),
-  });
-
-  // 🔄 refetch this track only
-  const res = await fetch(
-    `${API_BASE}/api/admin/student-coordinator?eventId=${event._id}&trackId=${trackId}`
-  );
-  const data = await res.json();
-
-  setScByTrack(prev => ({
-    ...prev,
-    [trackId]: data.coordinator,
-  }));
-
-  setStudentForm({
-    id: "",
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    trackId: "",
-  });
-};
+    setStudentForm({
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      trackId: "",
+    });
+  };
 
 
+  const editStudent = (id) => {
+    const s = event.studentCoordinators.find((x) => x.id === id);
+    if (s) setStudentForm({ ...s });
+  };
+
+  const updateStudent = async () => {
+    const { id, name, email, phone, password, trackId } = studentForm;
+
+    if (!id) return alert("Invalid student");
+
+    await fetch(`${API_BASE}/api/admin/student-coordinator`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        name,
+        email,
+        phone,
+        password: password || undefined, // 🔐 update only if provided
+        eventId: event._id,
+        trackId,
+      }),
+    });
+
+    // 🔄 refetch this track only
+    const res = await fetch(
+      `${API_BASE}/api/admin/student-coordinator?eventId=${event._id}&trackId=${trackId}`
+    );
+    const data = await res.json();
+
+    setScByTrack(prev => ({
+      ...prev,
+      [trackId]: data.coordinator,
+    }));
+
+    setStudentForm({
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      trackId: "",
+    });
+  };
 
 
-const deleteStudent = (id) => {
-  markDirty()
-  if (!confirm("Delete student coordinator?")) return;
-  setEvent((ev) => ({
-    ...ev,
-    studentCoordinators: ev.studentCoordinators.filter((s) => s.id !== id),
-  }));
-};
+
+
+  const deleteStudent = (id) => {
+    markDirty()
+    if (!confirm("Delete student coordinator?")) return;
+    setEvent((ev) => ({
+      ...ev,
+      studentCoordinators: ev.studentCoordinators.filter((s) => s.id !== id),
+    }));
+  };
 
 
   const getTrackTitle = (trackId) => {
@@ -952,7 +954,7 @@ const deleteStudent = (id) => {
   const step3Valid = (() => {
     if (event.tracks.length === 0) return false;
     if (!Array.isArray(event.sessionChairs) || event.sessionChairs.length === 0)
-    return false;
+      return false;
 
     for (const tr of event.tracks) {
       const chairsForTrack = event.sessionChairs.filter(
@@ -1066,21 +1068,21 @@ const deleteStudent = (id) => {
   };
 
   const deleteParticipant = (trackId, participantId) => {
-  if (!confirm("Delete participant?")) return;
+    if (!confirm("Delete participant?")) return;
 
-  setEvent((ev) => {
-    const current = { ...(ev.participants || {}) };
-    current[trackId] = (current[trackId] || []).filter(
-      (p) => p.paperId !== participantId
-    );
-    return { ...ev, participants: current };
-  });
-};
+    setEvent((ev) => {
+      const current = { ...(ev.participants || {}) };
+      current[trackId] = (current[trackId] || []).filter(
+        (p) => p.paperId !== participantId
+      );
+      return { ...ev, participants: current };
+    });
+  };
 
-const step4Valid =
-  Array.isArray(event.tracks) &&
-  event.tracks.length > 0 &&
-  event.tracks.every((tr) => scByTrack[tr.id] !== null);
+  const step4Valid =
+    Array.isArray(event.tracks) &&
+    event.tracks.length > 0 &&
+    event.tracks.every((tr) => scByTrack[tr.id] !== null);
 
 
 
@@ -1148,58 +1150,58 @@ const step4Valid =
     }
   };
 
-  
+
 
 
   const saveAndNext = async () => {
-  // 🔥 ALWAYS persist when editing
-  if (isEdit && activeStep === 4) {
-  setSaving(true);
-  try {
-    await persistFullEditEvent(event);
-  } finally {
-    setSaving(false);
-  }
-}
-
-
-  if (activeStep === 1) {
-    if (!step1Valid) return alert("Complete Step 1");
-    markCompleted(1);
-    setActiveStep(2);
-  } 
-  else if (activeStep === 2) {
-    if (!step2Valid) return alert("Add at least one track");
-    markCompleted(2);
-    setActiveStep(3);
-  } 
-  else if (activeStep === 3) {
-    if (!step3Valid) return alert("Fix session chairs");
-    markCompleted(3);
-    setActiveStep(4);
-  } 
-  else if (activeStep === 4) {
-    if (!step4Valid) return alert("Fix student coordinators");
-
-    markCompleted(4);
-
-    if (!isEdit) {
-      // CREATE MODE ONLY
-      const result = await saveEventToBackend(event);
-      if (!result.success) {
-        alert("Save failed");
-        return;
+    // 🔥 ALWAYS persist when editing
+    if (isEdit && activeStep === 4) {
+      setSaving(true);
+      try {
+        await persistFullEditEvent(event);
+      } finally {
+        setSaving(false);
       }
     }
 
-    setSuccessMessage(
-      isEdit
-        ? "✅ Event updated successfully"
-        : "✅ Event created successfully"
-    );
-    return;
-  }
-};
+
+    if (activeStep === 1) {
+      if (!step1Valid) return alert("Complete Step 1");
+      markCompleted(1);
+      setActiveStep(2);
+    }
+    else if (activeStep === 2) {
+      if (!step2Valid) return alert("Add at least one track");
+      markCompleted(2);
+      setActiveStep(3);
+    }
+    else if (activeStep === 3) {
+      if (!step3Valid) return alert("Fix session chairs");
+      markCompleted(3);
+      setActiveStep(4);
+    }
+    else if (activeStep === 4) {
+      if (!step4Valid) return alert("Fix student coordinators");
+
+      markCompleted(4);
+
+      if (!isEdit) {
+        // CREATE MODE ONLY
+        const result = await saveEventToBackend(event);
+        if (!result.success) {
+          alert("Save failed");
+          return;
+        }
+      }
+
+      setSuccessMessage(
+        isEdit
+          ? "✅ Event updated successfully"
+          : "✅ Event created successfully"
+      );
+      return;
+    }
+  };
 
 
   useEffect(() => {
@@ -1210,12 +1212,12 @@ const step4Valid =
   }, [successMessage]);
 
   if (isEdit && !event.tracks) {
-  return (
-    <div className="p-6 text-gray-600">
-      Loading event data...
-    </div>
-  );
-}
+    return (
+      <div className="p-6 text-gray-600">
+        Loading event data...
+      </div>
+    );
+  }
 
 
 
@@ -1234,22 +1236,20 @@ const step4Valid =
                 onClick={() => {
                   if (done || active) setActiveStep(s.id);
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg border font-medium text-left transition ${
-                  active
-                    ? "border-green-500 text-green-700 bg-green-50"
-                    : done
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg border font-medium text-left transition ${active
+                  ? "border-green-500 text-green-700 bg-green-50"
+                  : done
                     ? "bg-green-600 text-white"
                     : "border-green-100 text-gray-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 <span
-                  className={`w-6 h-6 flex items-center justify-center rounded-full font-semibold ${
-                    done
-                      ? "bg-green-500 text-white"
-                      : active
+                  className={`w-6 h-6 flex items-center justify-center rounded-full font-semibold ${done
+                    ? "bg-green-500 text-white"
+                    : active
                       ? "border-2 border-green-500 text-green-700"
                       : "border border-gray-300 text-gray-500"
-                  }`}
+                    }`}
                 >
                   {s.id}
                 </span>
@@ -1260,20 +1260,20 @@ const step4Valid =
             );
           })}
           <div className="mt-4">
-          <button
-  onClick={() => {
-    if (isDirty && !successMessage) {
-      const ok = confirm(
-        "You have unsaved changes. If you leave now, they will be lost. Continue?"
-      );
-      if (!ok) return;
-    }
-    navigate("/dashboard");
-  }}
-  className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition flex items-center justify-center w-full sm:w-auto gap-2"
->
-  ← Back to Dashboard
-</button>
+            <button
+              onClick={() => {
+                if (isDirty && !successMessage) {
+                  const ok = confirm(
+                    "You have unsaved changes. If you leave now, they will be lost. Continue?"
+                  );
+                  if (!ok) return;
+                }
+                navigate("/dashboard");
+              }}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition flex items-center justify-center w-full sm:w-auto gap-2"
+            >
+              ← Back to Dashboard
+            </button>
 
           </div>
         </div>
@@ -1366,39 +1366,39 @@ const step4Valid =
                 />
               </div>
               <div className="flex gap-2">
-              {editingTrackId ? (
-  <>
-    <button
-      onClick={updateTrack}
-      className="px-4 py-2 bg-yellow-500 text-white rounded"
-    >
-      Update Track
-    </button>
-    <button
-      onClick={() => {
-        setEditingTrackId(null);
-        setTTitle("");
-        setTDesc("");
-      }}
-      className="px-4 py-2 border rounded"
-    >
-      Cancel
-    </button>
-  </>
-) : (
-  <button
-    onClick={addTrack}
-    className="px-4 py-2 bg-green-600 text-white rounded"
-  >
-    Add Track
-  </button>
-)}
+                {editingTrackId ? (
+                  <>
+                    <button
+                      onClick={updateTrack}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded"
+                    >
+                      Update Track
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingTrackId(null);
+                        setTTitle("");
+                        setTDesc("");
+                      }}
+                      className="px-4 py-2 border rounded"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={addTrack}
+                    className="px-4 py-2 bg-green-600 text-white rounded"
+                  >
+                    Add Track
+                  </button>
+                )}
 
-            </div>
+              </div>
 
               {event.tracks.length > 0 && (
                 <div className="mt-4 space-y-2">
-                  
+
                   {event.tracks.map((tr) => (
                     <div
                       key={tr.id}
@@ -1413,25 +1413,25 @@ const step4Valid =
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-  <div className="flex gap-3">
-    <button
-  onClick={() => editTrack(tr)}
-  className="text-blue-600 text-sm"
->
-  Edit
-</button>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => editTrack(tr)}
+                            className="text-blue-600 text-sm"
+                          >
+                            Edit
+                          </button>
 
-<button
-  onClick={() => deleteTrack(tr.id)}
-  className="text-red-600 text-sm"
->
-  Delete
-</button>
+                          <button
+                            onClick={() => deleteTrack(tr.id)}
+                            className="text-red-600 text-sm"
+                          >
+                            Delete
+                          </button>
 
-  </div>
-</div>
+                        </div>
+                      </div>
 
-        
+
                     </div>
                   ))}
                 </div>
@@ -1567,65 +1567,64 @@ const step4Valid =
             {event.sessionChairs.length > 0 && (
               <div className="space-y-2">
                 {event.tracks.map(tr => {
-  const chairs = event.sessionChairs.filter(
-    c => c.trackId === tr.id
-  );
+                  const chairs = event.sessionChairs.filter(
+                    c => c.trackId === tr.id
+                  );
 
-  if (chairs.length === 0) return null;
+                  if (chairs.length === 0) return null;
 
-  return (
-    <div
-      key={tr.id}
-      className="border border-green-200 rounded-lg p-4 mb-4 bg-green-50"
-    >
-      <h3 className="font-semibold text-green-800 mb-2">
-        Track: {tr.title}
-      </h3>
+                  return (
+                    <div
+                      key={tr.id}
+                      className="border border-green-200 rounded-lg p-4 mb-4 bg-green-50"
+                    >
+                      <h3 className="font-semibold text-green-800 mb-2">
+                        Track: {tr.title}
+                      </h3>
 
-      <div className="space-y-2">
-        {chairs.map(c => (
-          <div
-            key={c.id}
-            className="flex justify-between items-start border rounded-md p-3 bg-white"
-          >
-            <div>
-              <p className="font-semibold">
-                {c.name}
-                <span
-                  className={`ml-2 text-xs px-2 py-0.5 rounded ${
-                    c.type === "Internal"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-purple-100 text-purple-700"
-                  }`}
-                >
-                  {c.type}
-                </span>
-              </p>
-              <p className="text-sm text-gray-600">
-                {c.email} • {c.phone}
-              </p>
-            </div>
+                      <div className="space-y-2">
+                        {chairs.map(c => (
+                          <div
+                            key={c.id}
+                            className="flex justify-between items-start border rounded-md p-3 bg-white"
+                          >
+                            <div>
+                              <p className="font-semibold">
+                                {c.name}
+                                <span
+                                  className={`ml-2 text-xs px-2 py-0.5 rounded ${c.type === "Internal"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-purple-100 text-purple-700"
+                                    }`}
+                                >
+                                  {c.type}
+                                </span>
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {c.email} • {c.phone}
+                              </p>
+                            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => editChair(c.id)}
-                className="text-blue-600 text-sm"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => deleteChair(c.id)}
-                className="text-red-600 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-})}
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => editChair(c.id)}
+                                className="text-blue-600 text-sm"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteChair(c.id)}
+                                className="text-red-600 text-sm"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
 
               </div>
             )}
@@ -1634,205 +1633,204 @@ const step4Valid =
 
         {/* Step 4 Participants */}
         {activeStep === 4 && (
-  <div className="max-w-4xl">
-  <h2 className="text-xl font-semibold mb-4">
-    Student Coordinator
-  </h2>
+          <div className="max-w-4xl">
+            <h2 className="text-xl font-semibold mb-4">
+              Student Coordinator
+            </h2>
 
-  {/* ---- FORM ---- */}
-  <div className="grid sm:grid-cols-2 gap-4">
-    <input
-      placeholder="Name"
-      value={studentForm.name}
-      onChange={(e) =>
-        setStudentForm({ ...studentForm, name: e.target.value })
-      }
-      className="border px-3 py-2 rounded"
-    />
+            {/* ---- FORM ---- */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <input
+                placeholder="Name"
+                value={studentForm.name}
+                onChange={(e) =>
+                  setStudentForm({ ...studentForm, name: e.target.value })
+                }
+                className="border px-3 py-2 rounded"
+              />
 
-    <input
-      placeholder="Email"
-      value={studentForm.email}
-      onChange={(e) =>
-        setStudentForm({ ...studentForm, email: e.target.value })
-      }
-      className="border px-3 py-2 rounded"
-    />
+              <input
+                placeholder="Email"
+                value={studentForm.email}
+                onChange={(e) =>
+                  setStudentForm({ ...studentForm, email: e.target.value })
+                }
+                className="border px-3 py-2 rounded"
+              />
 
-    <input
-      placeholder="Phone"
-      value={studentForm.phone}
-      onChange={(e) =>
-        setStudentForm({ ...studentForm, phone: e.target.value })
-      }
-      className="border px-3 py-2 rounded"
-    />
+              <input
+                placeholder="Phone"
+                value={studentForm.phone}
+                onChange={(e) =>
+                  setStudentForm({ ...studentForm, phone: e.target.value })
+                }
+                className="border px-3 py-2 rounded"
+              />
 
-    <input
-      placeholder="Password (auto if empty)"
-      value={studentForm.password}
-      onChange={(e) =>
-        setStudentForm({ ...studentForm, password: e.target.value })
-      }
-      className="border px-3 py-2 rounded"
-    />
+              <input
+                placeholder="Password (auto if empty)"
+                value={studentForm.password}
+                onChange={(e) =>
+                  setStudentForm({ ...studentForm, password: e.target.value })
+                }
+                className="border px-3 py-2 rounded"
+              />
 
-    <select
-      value={studentForm.trackId}
-      onChange={(e) =>
-        setStudentForm({ ...studentForm, trackId: e.target.value })
-      }
-      className="border px-3 py-2 rounded sm:col-span-2"
-    >
-      <option value="">Assign Track</option>
-      {event.tracks.map((tr) => (
-        <option key={tr.id} value={tr.id}>
-          {tr.title}
-        </option>
-      ))}
-    </select>
-  </div>
-
-  {/* ---- ACTION BUTTON ---- */}
-  <div className="mt-4">
-    {studentForm.id ? (
-      <button
-        onClick={updateStudent}
-        className="px-4 py-2 bg-yellow-500 text-white rounded"
-      >
-        Update Student
-      </button>
-    ) : (
-      <button
-        onClick={addStudentCoordinator}
-        className="px-4 py-2 bg-green-600 text-white rounded"
-      >
-        Add Student Coordinator
-      </button>
-    )}
-  </div>
-
-  {/* ---- LIST BY TRACK ---- */}
-  <div className="mt-6 space-y-4">
-    {event.tracks.map((tr) => {
-      const coordinator = scByTrack[tr.id];
-
-      return (
-        <div
-          key={tr.id}
-          className="border border-green-200 rounded-lg p-4 bg-green-50"
-        >
-          <h3 className="font-semibold text-green-800 mb-2">
-            Track: {tr.title}
-          </h3>
-
-          {coordinator ? (
-            <div className="flex justify-between items-start border rounded-md p-4 bg-white">
-              <div className="space-y-1">
-                <p className="font-semibold text-gray-800">
-                  {coordinator.name}
-                </p>
-
-                <p className="text-sm text-gray-600">
-                  📧 {coordinator.email}
-                </p>
-
-                <p className="text-sm text-gray-600">
-                  📞 {coordinator.phone}
-                </p>
-
-                <p className="text-sm text-gray-500 italic">
-                  🔐 Password: •••••••• (hidden)
-                </p>
-
-                <p className="text-sm text-gray-700">
-                  🧭 Track:{" "}
-                  <span className="font-medium">{tr.title}</span>
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() =>
-                    setStudentForm({
-                      id: coordinator._id,
-                      name: coordinator.name,
-                      email: coordinator.email,
-                      phone: coordinator.phone,
-                      password: "",
-                      trackId: tr.id,
-                    })
-                  }
-                  className="text-blue-600 text-sm font-medium"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={async () => {
-                    if (!confirm("Delete student coordinator?")) return;
-
-                    await fetch(
-                      `${API_BASE}/api/admin/student-coordinator`,
-                      {
-                        method: "DELETE",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          eventId: event._id,
-                          trackId: tr.id,
-                        }),
-                      }
-                    );
-
-                    setScByTrack((prev) => ({
-                      ...prev,
-                      [tr.id]: null,
-                    }));
-                  }}
-                  className="text-red-600 text-sm font-medium"
-                >
-                  Delete
-                </button>
-              </div>
+              <select
+                value={studentForm.trackId}
+                onChange={(e) =>
+                  setStudentForm({ ...studentForm, trackId: e.target.value })
+                }
+                className="border px-3 py-2 rounded sm:col-span-2"
+              >
+                <option value="">Assign Track</option>
+                {event.tracks.map((tr) => (
+                  <option key={tr.id} value={tr.id}>
+                    {tr.title}
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            <div className="text-sm text-gray-500 italic">
-              No student coordinator assigned for this track
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
-</div>
 
-)}
+            {/* ---- ACTION BUTTON ---- */}
+            <div className="mt-4">
+              {studentForm.id ? (
+                <button
+                  onClick={updateStudent}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded"
+                >
+                  Update Student
+                </button>
+              ) : (
+                <button
+                  onClick={addStudentCoordinator}
+                  className="px-4 py-2 bg-green-600 text-white rounded"
+                >
+                  Add Student Coordinator
+                </button>
+              )}
+            </div>
+
+            {/* ---- LIST BY TRACK ---- */}
+            <div className="mt-6 space-y-4">
+              {event.tracks.map((tr) => {
+                const coordinator = scByTrack[tr.id];
+
+                return (
+                  <div
+                    key={tr.id}
+                    className="border border-green-200 rounded-lg p-4 bg-green-50"
+                  >
+                    <h3 className="font-semibold text-green-800 mb-2">
+                      Track: {tr.title}
+                    </h3>
+
+                    {coordinator ? (
+                      <div className="flex justify-between items-start border rounded-md p-4 bg-white">
+                        <div className="space-y-1">
+                          <p className="font-semibold text-gray-800">
+                            {coordinator.name}
+                          </p>
+
+                          <p className="text-sm text-gray-600">
+                            📧 {coordinator.email}
+                          </p>
+
+                          <p className="text-sm text-gray-600">
+                            📞 {coordinator.phone}
+                          </p>
+
+                          <p className="text-sm text-gray-500 italic">
+                            🔐 Password: •••••••• (hidden)
+                          </p>
+
+                          <p className="text-sm text-gray-700">
+                            🧭 Track:{" "}
+                            <span className="font-medium">{tr.title}</span>
+                          </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() =>
+                              setStudentForm({
+                                id: coordinator._id,
+                                name: coordinator.name,
+                                email: coordinator.email,
+                                phone: coordinator.phone,
+                                password: "",
+                                trackId: tr.id,
+                              })
+                            }
+                            className="text-blue-600 text-sm font-medium"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={async () => {
+                              if (!confirm("Delete student coordinator?")) return;
+
+                              await fetch(
+                                `${API_BASE}/api/admin/student-coordinator`,
+                                {
+                                  method: "DELETE",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    eventId: event._id,
+                                    trackId: tr.id,
+                                  }),
+                                }
+                              );
+
+                              setScByTrack((prev) => ({
+                                ...prev,
+                                [tr.id]: null,
+                              }));
+                            }}
+                            className="text-red-600 text-sm font-medium"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500 italic">
+                        No student coordinator assigned for this track
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        )}
 
 
         {/* Fixed Save & Next (bottom-right of viewport) */}
         <div className="fixed bottom-6 right-6 z-40">
-        <button
-  onClick={saveAndNext}
-  disabled={saving}
-  className={`px-6 py-3 rounded-lg font-semibold shadow-md transition ${
-    saving
-      ? "bg-gray-400 text-white cursor-not-allowed"
-      : (activeStep === 1 && step1Valid) ||
-        (activeStep === 2 && step2Valid) ||
-        (activeStep === 3 && step3Valid) ||
-        (activeStep === 4 && step4Valid)
-      ? "bg-green-600 hover:bg-green-700 text-white"
-      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-  }`}
->
-  {saving
-    ? "Saving..."
-    : activeStep === 4
-    ? isEdit
-      ? "Save Changes"
-      : "Create Event"
-    : "Save & Next"}
-</button>
+          <button
+            onClick={saveAndNext}
+            disabled={saving}
+            className={`px-6 py-3 rounded-lg font-semibold shadow-md transition ${saving
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : (activeStep === 1 && step1Valid) ||
+                (activeStep === 2 && step2Valid) ||
+                (activeStep === 3 && step3Valid) ||
+                (activeStep === 4 && step4Valid)
+                ? "bg-green-600 hover:bg-green-700 text-white"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+          >
+            {saving
+              ? "Saving..."
+              : activeStep === 4
+                ? isEdit
+                  ? "Save Changes"
+                  : "Create Event"
+                : "Save & Next"}
+          </button>
 
 
         </div>
@@ -1982,160 +1980,160 @@ function EventDetails({ events, setEvents }) {
 
   const [local, setLocal] = useState(null);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
-const [selectedTrackId, setSelectedTrackId] = useState(null);
-const [sessionChairs, setSessionChairs] = useState([]);
-const [studentCoordinator, setStudentCoordinator] = useState(null);
-const [trackStats, setTrackStats] = useState({});
-const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState(null);
+  const [sessionChairs, setSessionChairs] = useState([]);
+  const [studentCoordinator, setStudentCoordinator] = useState(null);
+  const [trackStats, setTrackStats] = useState({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 
-useEffect(() => {
-  if (!local || !Array.isArray(local.tracks)) return;
-  if (selectedTrackId) return;
-  
-  const firstTrack = local.tracks[0];
-  if (firstTrack?.id) {
-    setSelectedTrackId(firstTrack.id);
-  }
-}, [local, selectedTrackId]);
+  useEffect(() => {
+    if (!local || !Array.isArray(local.tracks)) return;
+    if (selectedTrackId) return;
 
-useEffect(() => {
-  if (!local?._id) return;
+    const firstTrack = local.tracks[0];
+    if (firstTrack?.id) {
+      setSelectedTrackId(firstTrack.id);
+    }
+  }, [local, selectedTrackId]);
 
-  fetch(`${API_BASE}/api/admin/session-chairs/${local._id}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        setSessionChairs(data.chairs || []);
-      }
-    });
-}, [local]);
+  useEffect(() => {
+    if (!local?._id) return;
 
-useEffect(() => {
-  if (!local?._id || !selectedTrackId) return;
+    fetch(`${API_BASE}/api/admin/session-chairs/${local._id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSessionChairs(data.chairs || []);
+        }
+      });
+  }, [local]);
 
-  // 🔥 RESET before fetch
-  setStudentCoordinator(null);
+  useEffect(() => {
+    if (!local?._id || !selectedTrackId) return;
 
-  fetch(
-    `${API_BASE}/api/admin/student-coordinator?eventId=${local._id}&trackId=${selectedTrackId}`
-  )
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        setStudentCoordinator(data.coordinator);
-      }
-    });
-}, [local, selectedTrackId]);
+    // 🔥 RESET before fetch
+    setStudentCoordinator(null);
+
+    fetch(
+      `${API_BASE}/api/admin/student-coordinator?eventId=${local._id}&trackId=${selectedTrackId}`
+    )
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setStudentCoordinator(data.coordinator);
+        }
+      });
+  }, [local, selectedTrackId]);
 
 
 
-useEffect(() => {
-  let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  const loadEvent = async () => {
-    // 1️⃣ First try from already-loaded events list
-    if (Array.isArray(events) && events.length > 0) {
-      const ev = events.find((e) => e._id === id || e.id === id);
+    const loadEvent = async () => {
+      // 1️⃣ First try from already-loaded events list
+      if (Array.isArray(events) && events.length > 0) {
+        const ev = events.find((e) => e._id === id || e.id === id);
 
-      if (ev) {
-        if (cancelled) return;
+        if (ev) {
+          if (cancelled) return;
 
-        setLocal({
-          _id: ev._id,
-          id: ev._id || ev.id,
-          title: ev.title || "",
-          description: ev.description || "",
-          date: ev.date || "",
-          tracks: Array.isArray(ev.tracks) ? ev.tracks : [],
-          participants: ev.participants || {},
-          studentCoordinators: Array.isArray(ev.studentCoordinators)
-            ? ev.studentCoordinators.map((s) => ({
+          setLocal({
+            _id: ev._id,
+            id: ev._id || ev.id,
+            title: ev.title || "",
+            description: ev.description || "",
+            date: ev.date || "",
+            tracks: Array.isArray(ev.tracks) ? ev.tracks : [],
+            participants: ev.participants || {},
+            studentCoordinators: Array.isArray(ev.studentCoordinators)
+              ? ev.studentCoordinators.map((s) => ({
                 ...s,
                 trackId:
                   typeof s.trackId === "object"
                     ? s.trackId._id || s.trackId.id
                     : s.trackId,
               }))
-            : [],
-          sessionChairs: [], // loaded separately if needed
-          criteria: ev.criteria || [],
-          allowDirectTotal: ev.allowDirectTotal ?? true,
-        });
+              : [],
+            sessionChairs: [], // loaded separately if needed
+            criteria: ev.criteria || [],
+            allowDirectTotal: ev.allowDirectTotal ?? true,
+          });
 
-        return;
+          return;
+        }
       }
-    }
 
-    // 2️⃣ Fallback: fetch single event from backend
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/admin/events/${encodeURIComponent(id)}`
-      );
+      // 2️⃣ Fallback: fetch single event from backend
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/admin/events/${encodeURIComponent(id)}`
+        );
 
-      if (!res.ok) return;
+        if (!res.ok) return;
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!data?.event || cancelled) return;
+        if (!data?.event || cancelled) return;
 
-      setLocal({
-        _id: data.event._id,
-        id: data.event._id,
-        title: data.event.title || "",
-        description: data.event.description || "",
-        date: data.event.date || "",
-        tracks: Array.isArray(data.event.tracks)
-          ? data.event.tracks
-          : [],
-        participants: data.event.participants || {},
-        studentCoordinators: Array.isArray(data.event.studentCoordinators)
-          ? data.event.studentCoordinators.map((s) => ({
+        setLocal({
+          _id: data.event._id,
+          id: data.event._id,
+          title: data.event.title || "",
+          description: data.event.description || "",
+          date: data.event.date || "",
+          tracks: Array.isArray(data.event.tracks)
+            ? data.event.tracks
+            : [],
+          participants: data.event.participants || {},
+          studentCoordinators: Array.isArray(data.event.studentCoordinators)
+            ? data.event.studentCoordinators.map((s) => ({
               ...s,
               trackId:
                 typeof s.trackId === "object"
                   ? s.trackId._id || s.trackId.id
                   : s.trackId,
             }))
-          : [],
-        sessionChairs: [],
-        criteria: data.event.criteria || [],
-        allowDirectTotal: data.event.allowDirectTotal ?? true,
-      });
-    } catch (err) {
-      console.error("Fetching single event failed:", err);
-    }
-  };
+            : [],
+          sessionChairs: [],
+          criteria: data.event.criteria || [],
+          allowDirectTotal: data.event.allowDirectTotal ?? true,
+        });
+      } catch (err) {
+        console.error("Fetching single event failed:", err);
+      }
+    };
 
-  loadEvent();
+    loadEvent();
 
-  return () => {
-    cancelled = true;
-  };
-}, [events, id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [events, id]);
 
   useEffect(() => {
-  if (!local?._id) return;
+    if (!local?._id) return;
 
-  fetch(`${API_BASE}/api/admin/participants/stats?eventId=${local._id}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        setTrackStats(data.stats || {});
-      }
-    });
-}, [local]);
-const getProgressColor = (assessed, total) => {
-  if (!total || total === 0) return "bg-gray-300";
+    fetch(`${API_BASE}/api/admin/participants/stats?eventId=${local._id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setTrackStats(data.stats || {});
+        }
+      });
+  }, [local]);
+  const getProgressColor = (assessed, total) => {
+    if (!total || total === 0) return "bg-gray-300";
 
-  const percent = (assessed / total) * 100;
+    const percent = (assessed / total) * 100;
 
-  if (percent <= 20) return "bg-red-500";
-  if (percent <= 40) return "bg-orange-500";
-  if (percent <= 60) return "bg-yellow-500";
-  if (percent <= 80) return "bg-lime-500";
-  return "bg-green-600";
-};
+    if (percent <= 20) return "bg-red-500";
+    if (percent <= 40) return "bg-orange-500";
+    if (percent <= 60) return "bg-yellow-500";
+    if (percent <= 80) return "bg-lime-500";
+    return "bg-green-600";
+  };
 
 
   if (!local) {
@@ -2159,13 +2157,13 @@ const getProgressColor = (assessed, total) => {
   }
 
   const updateTrackField = (trackId, field, value) => {
-  setLocal((prev) => ({
-    ...prev,
-    tracks: prev.tracks.map((t) =>
-      t.id === trackId ? { ...t, [field]: value } : t
-    ),
-  }));
-};
+    setLocal((prev) => ({
+      ...prev,
+      tracks: prev.tracks.map((t) =>
+        t.id === trackId ? { ...t, [field]: value } : t
+      ),
+    }));
+  };
 
   const updateLocalToGlobal = async () => {
 
@@ -2207,36 +2205,36 @@ const getProgressColor = (assessed, total) => {
   };
 
   const toggleAssessmentLock = async (trackId) => {
-  const track = local.tracks.find((t) => t.id === trackId);
-  if (!track) return;
+    const track = local.tracks.find((t) => t.id === trackId);
+    if (!track) return;
 
-  const res = await fetch(
-    `${API_BASE}/api/admin/tracks/${local._id}/${trackId}/lock`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locked: !track.assessmentLocked }),
+    const res = await fetch(
+      `${API_BASE}/api/admin/tracks/${local._id}/${trackId}/lock`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locked: !track.assessmentLocked }),
+      }
+    );
+
+    const data = await res.json();
+    if (!data.success) {
+      alert("Failed to update lock");
+      return;
     }
-  );
 
-  const data = await res.json();
-  if (!data.success) {
-    alert("Failed to update lock");
-    return;
-  }
+    // ✅ RE-FETCH EVENT FROM BACKEND (single source of truth)
+    const refreshed = await fetch(
+      `${API_BASE}/api/admin/events/${local._id}`
+    ).then((r) => r.json());
 
-  // ✅ RE-FETCH EVENT FROM BACKEND (single source of truth)
-  const refreshed = await fetch(
-    `${API_BASE}/api/admin/events/${local._id}`
-  ).then((r) => r.json());
-
-  if (refreshed.success) {
-    setLocal((prev) => ({
-      ...prev,
-      tracks: refreshed.event.tracks,
-    }));
-  }
-};
+    if (refreshed.success) {
+      setLocal((prev) => ({
+        ...prev,
+        tracks: refreshed.event.tracks,
+      }));
+    }
+  };
 
 
 
@@ -2244,43 +2242,43 @@ const getProgressColor = (assessed, total) => {
     <div className="absolute inset-0 p-6 flex flex-col overflow-hidden">
       <div className="flex items-start justify-between mb-6 shrink-0">
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm w-full">
-  <h2 className="text-2xl font-semibold text-gray-800">
-    {local.title}
-  </h2>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            {local.title}
+          </h2>
 
-  <p className="text-sm text-gray-600 text-justify mt-0">
-    {local.description}
-  </p>
-<div className="mt-3 flex items-center justify-between">
-  <p className="text-sm text-gray-500 mt-2">
-    Date: {local.date}
-  </p>
-
-  
-    <div className="flex items-center gap-3">
-
-    <button
-      onClick={() => navigate("/dashboard")}
-      className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition flex items-center justify-center gap-2"
-    >
-      ← Back to Dashboard
-    </button>
-  </div>
-</div>
+          <p className="text-sm text-gray-600 text-justify mt-0">
+            {local.description}
+          </p>
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-sm text-gray-500 mt-2">
+              Date: {local.date}
+            </p>
 
 
-</div>
+            <div className="flex items-center gap-3">
+
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition flex items-center justify-center gap-2"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+          </div>
+
+
+        </div>
 
 
       </div>
 
 
-<div className="flex flex-1 border rounded-xl overflow-hidden relative min-h-0">
+      <div className="flex flex-1 border rounded-xl overflow-hidden relative min-h-0">
 
-  {/* 🟢 LEFT SIDEBAR */}
-  {/* 🟢 LEFT SIDEBAR */}
-<aside
-  className={`
+        {/* 🟢 LEFT SIDEBAR */}
+        {/* 🟢 LEFT SIDEBAR */}
+        <aside
+          className={`
     fixed inset-y-0 left-0
     z-50
     w-72 bg-white border-r border-green-100
@@ -2289,157 +2287,154 @@ const getProgressColor = (assessed, total) => {
     md:static md:translate-x-0 md:z-auto
     ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
   `}
->
-  {/* Sidebar Header */}
-  <div className="relative px-5 py-4 border-b bg-gradient-to-r from-green-50 to-white">
-    <h3 className="text-lg font-bold text-green-700 tracking-wide">
-      Tracks
-    </h3>
-    <p className="text-xs text-gray-500 mt-1">
-      Select a track to view details
-    </p>
+        >
+          {/* Sidebar Header */}
+          <div className="relative px-5 py-4 border-b bg-gradient-to-r from-green-50 to-white">
+            <h3 className="text-lg font-bold text-green-700 tracking-wide">
+              Tracks
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Select a track to view details
+            </p>
 
-    {/* ❌ Close button (mobile only) */}
-    <button
-      onClick={() => setIsSidebarOpen(false)}
-      className="absolute top-4 right-4 text-gray-500 md:hidden"
-    >
-      ✕
-    </button>
-  </div>
-
-
-  {/* Track List */}
-  <div className="flex-1 overflow-y-auto">
-    
-    {local.tracks.map((tr) => {
-      const active = selectedTrackId === tr.id;
-
-      return (
-        <button
-  key={tr.id}
-  onClick={() => {
-    setSelectedTrackId(tr.id);
-    setIsSidebarOpen(false); // 👈 auto-close sidebar
-  }}
-  className={`relative w-full px-5 py-4 text-left transition group ${
-    active ? "bg-green-50" : "hover:bg-gray-50"
-  }`}
->
-
-          {/* Active indicator */}
-          {active && (
-            <span className="absolute left-0 top-0 h-full w-1 bg-green-600 rounded-r" />
-          )}
-
-          <div className="flex flex-col gap-0.5">
-
-  {/* ✅ Track ID */}
-  <span className="text-[11px] uppercase tracking-wide text-gray-400">
-    Track ID: {tr.id}
-  </span>
-
-  {/* ✅ Track Title */}
-  <span
-    className={`text-sm font-semibold ${
-      active ? "text-green-700" : "text-gray-800"
-    }`}
-  >
-    {tr.title}
-  </span>
-
-  {/* ✅ Assessment count */}
-  <span className="text-xs text-gray-500 mt-1">
-    Assessed:{" "}
-    <span className="font-semibold text-green-700">
-      {trackStats[tr.id]?.assessed ?? 0}
-    </span>
-    {" / "}
-    {trackStats[tr.id]?.total ?? 0}
-  </span>
-
-  {/* ✅ Progress bar (UNCHANGED) */}
-  {trackStats[tr.id] && (
-    <div className="mt-1 w-full bg-gray-200 rounded h-1">
-      <div
-  className={`${getProgressColor(
-    trackStats[tr.id]?.assessed ?? 0,
-    trackStats[tr.id]?.total ?? 0
-  )} h-1 rounded transition-all duration-500`}
-        style={{
-          width: `${
-            trackStats[tr.id].total === 0
-              ? 0
-              : (trackStats[tr.id].assessed /
-                 trackStats[tr.id].total) * 100
-          }%`
-        }}
-      />
-    </div>
-  )}
+            {/* ❌ Close button (mobile only) */}
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 md:hidden"
+            >
+              ✕
+            </button>
           </div>
-        </button>
-      );
-    })}
-  </div>
-
-</aside>
-{isSidebarOpen && (
-  <div
-    onClick={() => setIsSidebarOpen(false)}
-    className="fixed inset-0 bg-black/40 z-40 md:hidden"
-  />
-)}
 
 
-  {/* 🟢 RIGHT CONTENT */}
-  {/* 🟢 RIGHT CONTENT */}
-<section className="flex-1 p-4 md:p-6 overflow-auto bg-green-50/40">
+          {/* Track List */}
+          <div className="flex-1 overflow-y-auto">
 
-  {/* 📱 MOBILE: Track selector button */}
-  <div className="mb-4 md:hidden">
-    <button
-      onClick={() => setIsSidebarOpen(true)}
-      className="
+            {local.tracks.map((tr) => {
+              const active = selectedTrackId === tr.id;
+
+              return (
+                <button
+                  key={tr.id}
+                  onClick={() => {
+                    setSelectedTrackId(tr.id);
+                    setIsSidebarOpen(false); // 👈 auto-close sidebar
+                  }}
+                  className={`relative w-full px-5 py-4 text-left transition group ${active ? "bg-green-50" : "hover:bg-gray-50"
+                    }`}
+                >
+
+                  {/* Active indicator */}
+                  {active && (
+                    <span className="absolute left-0 top-0 h-full w-1 bg-green-600 rounded-r" />
+                  )}
+
+                  <div className="flex flex-col gap-0.5">
+
+                    {/* ✅ Track ID */}
+                    <span className="text-[11px] uppercase tracking-wide text-gray-400">
+                      Track ID: {tr.id}
+                    </span>
+
+                    {/* ✅ Track Title */}
+                    <span
+                      className={`text-sm font-semibold ${active ? "text-green-700" : "text-gray-800"
+                        }`}
+                    >
+                      {tr.title}
+                    </span>
+
+                    {/* ✅ Assessment count */}
+                    <span className="text-xs text-gray-500 mt-1">
+                      Assessed:{" "}
+                      <span className="font-semibold text-green-700">
+                        {trackStats[tr.id]?.assessed ?? 0}
+                      </span>
+                      {" / "}
+                      {trackStats[tr.id]?.total ?? 0}
+                    </span>
+
+                    {/* ✅ Progress bar (UNCHANGED) */}
+                    {trackStats[tr.id] && (
+                      <div className="mt-1 w-full bg-gray-200 rounded h-1">
+                        <div
+                          className={`${getProgressColor(
+                            trackStats[tr.id]?.assessed ?? 0,
+                            trackStats[tr.id]?.total ?? 0
+                          )} h-1 rounded transition-all duration-500`}
+                          style={{
+                            width: `${trackStats[tr.id].total === 0
+                              ? 0
+                              : (trackStats[tr.id].assessed /
+                                trackStats[tr.id].total) * 100
+                              }%`
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+        </aside>
+        {isSidebarOpen && (
+          <div
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          />
+        )}
+
+
+        {/* 🟢 RIGHT CONTENT */}
+        {/* 🟢 RIGHT CONTENT */}
+        <section className="flex-1 p-4 md:p-6 overflow-auto bg-green-50/40">
+
+          {/* 📱 MOBILE: Track selector button */}
+          <div className="mb-4 md:hidden">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="
         w-full flex items-center justify-between
         px-4 py-2 rounded-lg
         bg-white border border-green-200
         text-green-700 font-semibold
       "
-    >
-      {selectedTrackId
-        ? `Track ${selectedTrackId}`
-        : "Select Track"}
-      <span className="text-lg">☰</span>
-    </button>
-  </div>
+            >
+              {selectedTrackId
+                ? `Track ${selectedTrackId}`
+                : "Select Track"}
+              <span className="text-lg">☰</span>
+            </button>
+          </div>
 
-  {/* 🟢 MAIN CONTENT */}
-  {selectedTrackId ? (
-    <TrackDetails
-      eventId={local._id}
-      trackId={selectedTrackId}
-      local={local}
-      studentCoordinator={studentCoordinator}
-      sessionChairs={sessionChairs}
-      onToggleAssessmentLock={toggleAssessmentLock}
-    />
-  ) : (
-    <div className="text-gray-600">
-      Select a track to view details
-    </div>
-  )}
+          {/* 🟢 MAIN CONTENT */}
+          {selectedTrackId ? (
+            <TrackDetails
+              eventId={local._id}
+              trackId={selectedTrackId}
+              local={local}
+              studentCoordinator={studentCoordinator}
+              sessionChairs={sessionChairs}
+              onToggleAssessmentLock={toggleAssessmentLock}
+            />
+          ) : (
+            <div className="text-gray-600">
+              Select a track to view details
+            </div>
+          )}
 
-</section>
-
-
-</div>
+        </section>
 
 
+      </div>
 
 
-  
-      
+
+
+
+
 
       {/* Save confirmation modal */}
       {saveConfirmOpen && (
@@ -2457,7 +2452,7 @@ const getProgressColor = (assessed, total) => {
       </div>
     </div>
   );
-  
+
 }
 
 function TrackDetails({
@@ -2486,25 +2481,25 @@ function TrackDetails({
   const [marksRange, setMarksRange] = useState([0, 50]);
   const [topLimit, setTopLimit] = useState(0); // 0 = no limit
   const [editingAssessment, setEditingAssessment] = useState(false);
-const isAdmin = sessionStorage.getItem("care_role") === "admin";
-const [assessmentMode, setAssessmentMode] = useState("criteria"); 
-// "criteria" | "total"
+  const isAdmin = sessionStorage.getItem("care_role") === "admin";
+  const [assessmentMode, setAssessmentMode] = useState("criteria");
+  // "criteria" | "total"
 
-const [adminAssessmentForm, setAdminAssessmentForm] = useState({
-  criteria: [],
-  comments: [],
-  total: 0,
-  notes: "",
-});
+  const [adminAssessmentForm, setAdminAssessmentForm] = useState({
+    criteria: [],
+    comments: [],
+    total: 0,
+    notes: "",
+  });
 
 
 
-const handleAdminSaveMarks = async () => {
-  const isCriteriaMode =
-    selectedParticipant.assessment?.criteria?.length > 0;
+  const handleAdminSaveMarks = async () => {
+    const isCriteriaMode =
+      selectedParticipant.assessment?.criteria?.length > 0;
 
-  const payload = isCriteriaMode
-    ? {
+    const payload = isCriteriaMode
+      ? {
         assessment: {
           criteria: adminAssessmentForm.criteria,
           comments: adminAssessmentForm.comments,
@@ -2514,1031 +2509,1026 @@ const handleAdminSaveMarks = async () => {
           ),
         },
       }
-    : {
+      : {
         assessment: {
           total: adminAssessmentForm.total,
           notes: adminAssessmentForm.notes,
         },
       };
 
-  await fetch(
-  `${API_BASE}/api/admin/participants/${selectedParticipant._id}`,
-  {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  }
-);
+    await fetch(
+      `${API_BASE}/api/admin/participants/${selectedParticipant._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
 
 
-  setEditingAssessment(false);
-};
+    setEditingAssessment(false);
+  };
 
 
-
-
-  if (!track) return null;
 
   const chairs = (sessionChairs || []).filter(
     (c) => String(c.trackId) === String(trackId)
   );
   const trackSessionChairs = sessionChairs.filter(
-  (c) => String(c.trackId) === String(trackId)
-);
-
-useEffect(() => {
-  if (!selectedParticipant) return;
-
-  const a = selectedParticipant.assessment || {};
-  const isCriteriaMode =
-    Array.isArray(a.criteria) && a.criteria.length > 0;
-
-  setAssessmentMode(isCriteriaMode ? "criteria" : "total");
-
-  let parsedComments = isCriteriaMode ? [...(a.comments || [])] : [];
-  let parsedNotes = a.notes || "";
-  if (parsedNotes.startsWith("JSON:")) {
-    try {
-      parsedComments = JSON.parse(parsedNotes.substring(5));
-      parsedNotes = "";
-    } catch (e) {}
-  }
-
-  setAdminAssessmentForm({
-    criteria: isCriteriaMode ? [...a.criteria] : [],
-    comments: parsedComments,
-    total: a.total ?? 0,
-    notes: parsedNotes,
-  });
-
-  setEditingAssessment(false);
-}, [selectedParticipant]);
-
-
-  useEffect(() => {
-  if (!eventId || !trackId) return;
-
-  const fetchParticipants = async () => {
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/participants/by-track?eventId=${eventId}&trackId=${trackId}`
-      );
-
-      const data = await res.json();
-
-      if (data.success) {
-        const mapped = data.participants.map(p => {
-          const leader = p.members?.find(m => m.isLeader) || p.members?.[0] || {};
-          return {
-            ...p,
-            paperId: p.teamId || p._id,
-            teamName: p.teamName || "",
-            problemStatement: p.problemStatement || "",
-            presenterName: leader.name || "Unknown",
-            email: leader.email || "",
-            phone: leader.mobile || "",
-            institute: leader.organisation || "",
-            branch: leader.domain || leader.specialization || ""
-          };
-        });
-        setParticipants(mapped);
-      } else {
-        setParticipants([]);
-      }
-    } catch (err) {
-      console.error("Failed to fetch participants", err);
-      setParticipants([]);
-    }
-  };
-
-  fetchParticipants();
-}, [eventId, trackId]);
-
-
-
-
-
-
-const filteredParticipants = participants
-  .filter((p) => {
-    const instituteMatch =
-      !filterInstitute ||
-      p.institute?.toLowerCase().includes(filterInstitute.toLowerCase());
-
-    const branchMatch =
-      !filterBranch ||
-      p.branch?.toLowerCase().includes(filterBranch.toLowerCase());
-
-    const marks = p.assessment?.total ?? -1;
-    const marksMatch =
-      marks === -1 ||
-      (marks >= marksRange[0] && marks <= marksRange[1]);
-
-    return instituteMatch && branchMatch && marksMatch;
-  })
-  .sort((a, b) => {
-    if (!sortBy) return 0;
-
-    let valA, valB;
-
-    if (sortBy === "paperId") {
-      valA = a.paperId;
-      valB = b.paperId;
-    }
-
-    if (sortBy === "marks") {
-      valA = a.assessment?.total ?? -1;
-      valB = b.assessment?.total ?? -1;
-    }
-
-    if (sortOrder === "asc") {
-      return valA > valB ? 1 : -1;
-    }
-    return valA < valB ? 1 : -1;
-  })
-  .slice(0, topLimit > 0 ? topLimit : participants.length);
-
-  const exportParticipantsCSV = () => {
-  if (!filteredParticipants.length) {
-    alert("No participants to export");
-    return;
-  }
-
-  const headers = [
-  "S.No",
-  "Team ID",
-  "Team Name",
-  "Presenter Name",
-  "Problem Statement",
-  "Track Name",
-  "Institute",
-  "Branch",
-  "Email",
-  "Phone",
-  "Marks",
-];
-
-
-  const rows = filteredParticipants.map((p, index) => [
-  index + 1,
-  p.paperId,
-  p.teamName,
-  p.presenterName,
-  p.problemStatement,
-  track.title,
-  p.institute || "",
-  p.branch || "",
-  p.email || "",
-  p.phone || "",
-  p.status === "EVALUATED"
-    ? p.assessment.total
-    : "Pending",
-]);
-
-
-  const csvContent =
-    [headers, ...rows]
-      .map((row) =>
-        row
-          .map((cell) =>
-            `"${String(cell).replace(/"/g, '""')}"`
-          )
-          .join(",")
-      )
-      .join("\n");
-
-  const blob = new Blob([csvContent], {
-    type: "text/csv;charset=utf-8;",
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = `IKIGAI_2026_Participants_Track_${trackId}.csv`;
-  link.click();
-
-  URL.revokeObjectURL(url);
-};
-
-
-
-const exportParticipantsXLSX = () => {
-  if (!filteredParticipants.length) {
-    alert("No participants to export");
-    return;
-  }
-
-  const rows = filteredParticipants.map((p, index) => ({
-  "S.No": index + 1,
-  "Team ID": p.paperId,
-  "Team Name": p.teamName,
-  "Problem Statement": p.problemStatement,
-  "Track Name": track.title,    // ✅ ADD
-  "Presenter Name": p.presenterName,
-  "Email": p.email,
-  "Phone": p.phone,
-  "Institute": p.institute,
-  "Branch": p.branch,
-  "Marks": p.assessment?.total ?? "Pending",
-  "Remarks": p.assessment?.remarks ?? "",
-  "Submission Link": p.submissionLink ?? "",
-  "Co-Authors": p.coAuthors?.map(
-    (c) => `${c.name} (${c.email})`
-  ).join("; "),
-}));
-
-
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-
-  // ✅ AUTO COLUMN WIDTH (KEY REQUIREMENT)
-  const colWidths = Object.keys(rows[0]).map((key) => ({
-    wch: Math.max(
-      key.length,
-      ...rows.map((r) => String(r[key] ?? "").length)
-    ) + 2,
-  }));
-
-  worksheet["!cols"] = colWidths;
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Participants"
-  );
-
-  XLSX.writeFile(
-    workbook,
-    `IKIGAI_2026_Participants_Track_${track.id}.xlsx`
-  );
-};
-
-
-const exportParticipantsPDF = () => {
-  if (!filteredParticipants || filteredParticipants.length === 0) {
-    alert("No participants to export");
-    return;
-  }
-
-  const doc = new jsPDF("p", "mm", "a4");
-
-  /* =========================
-     GLOBAL FONT SETUP
-  ========================= */
-  doc.setFont("helvetica", "normal");
-
-  /* =========================
-     HEADER (IKIGAI 2026)
-  ========================= */
-  doc.setFillColor(250, 245, 255); // purple-50
-  doc.rect(0, 0, 210, 34, "F");
-
-  // Add the IKIGAI logo (left aligned, aspect ratio maintained)
-  doc.addImage(ikigaiLogo, "PNG", 14, 8, 45, 15);
-
-  // Add Assessment Report header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.setTextColor(107, 33, 168); // purple-800
-  doc.text("Assessment Report", 105, 20, { align: "center" });
-
-  doc.setDrawColor(200, 200, 200);
-  doc.line(14, 32, 196, 32);
-
-  /* =========================
-     META INFORMATION
-  ========================= */
-  let y = 40;
-
-  doc.setFontSize(10);
-  doc.setTextColor(31, 41, 55);
-
-  doc.text(`Event: ${local?.title || "-"}`, 14, y);
-  y += 6;
-
-  doc.text(`Track: ${track?.id || "-"} – ${track?.title || "-"}`, 14, y);
-  y += 6;
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Session Chairs:", 14, y);
-  doc.setFont("helvetica", "normal");
-
-  const trackSessionChairs = (sessionChairs || []).filter(
     (c) => String(c.trackId) === String(trackId)
   );
 
-  const chairText =
-    trackSessionChairs.length > 0
-      ? trackSessionChairs.map((c) => `${c.name} (${c.type})`).join(", ")
-      : "Not Assigned";
+  useEffect(() => {
+    if (!selectedParticipant) return;
 
-  doc.text(chairText, 45, y, { maxWidth: 140 });
-  y += 12;
+    const a = selectedParticipant.assessment || {};
+    const isCriteriaMode =
+      Array.isArray(a.criteria) && a.criteria.length > 0;
 
-  /* =========================
-     PARTICIPANT TABLE
-  ========================= */
-  const tableRows = filteredParticipants.map((p, index) => {
-    let marks = "Pending";
-    let isAbsent = false;
+    setAssessmentMode(isCriteriaMode ? "criteria" : "total");
 
-    if (typeof p?.assessment?.total === "number") {
-      if (p.assessment.total === 0) {
-        marks = "Absent";
-        isAbsent = true;
-      } else {
-        marks = p.assessment.total;
-      }
+    let parsedComments = isCriteriaMode ? [...(a.comments || [])] : [];
+    let parsedNotes = a.notes || "";
+    if (parsedNotes.startsWith("JSON:")) {
+      try {
+        parsedComments = JSON.parse(parsedNotes.substring(5));
+        parsedNotes = "";
+      } catch (e) { }
     }
 
-    const leaderName = p.members?.find(m => m.isLeader)?.name || p.members?.[0]?.name || p.presenterName || "";
+    setAdminAssessmentForm({
+      criteria: isCriteriaMode ? [...a.criteria] : [],
+      comments: parsedComments,
+      total: a.total ?? 0,
+      notes: parsedNotes,
+    });
 
-    return [
-      index + 1,
-      p.paperId || "",
-      p.teamName || "",
-      p.problemStatement || "",
-      leaderName,
-      p.phone || "",
-      p.email || "",
-      {
-        content: marks,
-        styles: isAbsent
-          ? { textColor: [220, 38, 38], fontStyle: "bold" }
-          : {},
-      },
-    ];
-  });
+    setEditingAssessment(false);
+  }, [selectedParticipant]);
 
-  autoTable(doc, {
-    startY: y,
-    head: [[
+
+  useEffect(() => {
+    if (!eventId || !trackId) return;
+
+    const fetchParticipants = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/participants/by-track?eventId=${eventId}&trackId=${trackId}`
+        );
+
+        const data = await res.json();
+
+        if (data.success) {
+          const mapped = data.participants.map(p => {
+            const leader = p.members?.find(m => m.isLeader) || p.members?.[0] || {};
+            return {
+              ...p,
+              paperId: p.teamId || p._id,
+              teamName: p.teamName || "",
+              problemStatement: p.problemStatement || "",
+              presenterName: leader.name || "Unknown",
+              email: leader.email || "",
+              phone: leader.mobile || "",
+              institute: leader.organisation || "",
+              branch: leader.domain || leader.specialization || ""
+            };
+          });
+          setParticipants(mapped);
+        } else {
+          setParticipants([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch participants", err);
+        setParticipants([]);
+      }
+    };
+
+    fetchParticipants();
+  }, [eventId, trackId]);
+
+
+
+
+
+
+  const filteredParticipants = participants
+    .filter((p) => {
+      const instituteMatch =
+        !filterInstitute ||
+        p.institute?.toLowerCase().includes(filterInstitute.toLowerCase());
+
+      const branchMatch =
+        !filterBranch ||
+        p.branch?.toLowerCase().includes(filterBranch.toLowerCase());
+
+      const marks = p.assessment?.total ?? -1;
+      const marksMatch =
+        marks === -1 ||
+        (marks >= marksRange[0] && marks <= marksRange[1]);
+
+      return instituteMatch && branchMatch && marksMatch;
+    })
+    .sort((a, b) => {
+      if (!sortBy) return 0;
+
+      let valA, valB;
+
+      if (sortBy === "paperId") {
+        valA = a.paperId;
+        valB = b.paperId;
+      }
+
+      if (sortBy === "marks") {
+        valA = a.assessment?.total ?? -1;
+        valB = b.assessment?.total ?? -1;
+      }
+
+      if (sortOrder === "asc") {
+        return valA > valB ? 1 : -1;
+      }
+      return valA < valB ? 1 : -1;
+    })
+    .slice(0, topLimit > 0 ? topLimit : participants.length);
+
+  const exportParticipantsCSV = () => {
+    if (!filteredParticipants.length) {
+      alert("No participants to export");
+      return;
+    }
+
+    const headers = [
       "S.No",
       "Team ID",
       "Team Name",
+      "Presenter Name",
       "Problem Statement",
-      "Team Leader",
-      "Phone",
+      "Track Name",
+      "Institute",
+      "Branch",
       "Email",
+      "Phone",
       "Marks",
-    ]],
-    body: tableRows,
-    theme: "grid",
-    styles: {
-      font: "helvetica",
-      fontSize: 9,
-      cellPadding: 3,
-      valign: "middle",
-    },
-    headStyles: {
-      fillColor: [107, 33, 168], // purple-800
-      textColor: 255,
-      fontStyle: "bold",
-    },
-    columnStyles: {
-      0: { cellWidth: 10 },
-      1: { cellWidth: 15 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 25 },
-      4: { cellWidth: 25 },
-      5: { cellWidth: 22 },
-      6: { cellWidth: 35 },
-      7: { cellWidth: 20 },
-    },
-    margin: { left: 14, right: 14 },
-    pageBreak: "auto",
-  });
+    ];
 
-  /* =========================
-     FOOTER
-  ========================= */
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(9);
-    doc.setTextColor(107, 114, 128);
-    doc.text(
-      `Generated for Ikigai 2026 • Page ${i} of ${pageCount}`,
-      105,
-      290,
-      { align: "center" }
+
+    const rows = filteredParticipants.map((p, index) => [
+      index + 1,
+      p.paperId,
+      p.teamName,
+      p.presenterName,
+      p.problemStatement,
+      track.title,
+      p.institute || "",
+      p.branch || "",
+      p.email || "",
+      p.phone || "",
+      p.status === "EVALUATED"
+        ? p.assessment.total
+        : "Pending",
+    ]);
+
+
+    const csvContent =
+      [headers, ...rows]
+        .map((row) =>
+          row
+            .map((cell) =>
+              `"${String(cell).replace(/"/g, '""')}"`
+            )
+            .join(",")
+        )
+        .join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `IKIGAI_2026_Participants_Track_${trackId}.csv`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+
+
+  const exportParticipantsXLSX = () => {
+    if (!filteredParticipants.length) {
+      alert("No participants to export");
+      return;
+    }
+
+    const rows = filteredParticipants.map((p, index) => ({
+      "S.No": index + 1,
+      "Team ID": p.paperId,
+      "Team Name": p.teamName,
+      "Problem Statement": p.problemStatement,
+      "Track Name": track.title,    // ✅ ADD
+      "Presenter Name": p.presenterName,
+      "Email": p.email,
+      "Phone": p.phone,
+      "Institute": p.institute,
+      "Branch": p.branch,
+      "Marks": p.assessment?.total ?? "Pending",
+      "Remarks": p.assessment?.remarks ?? "",
+      "Submission Link": p.submissionLink ?? "",
+      "Co-Authors": p.coAuthors?.map(
+        (c) => `${c.name} (${c.email})`
+      ).join("; "),
+    }));
+
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    // ✅ AUTO COLUMN WIDTH (KEY REQUIREMENT)
+    const colWidths = Object.keys(rows[0]).map((key) => ({
+      wch: Math.max(
+        key.length,
+        ...rows.map((r) => String(r[key] ?? "").length)
+      ) + 2,
+    }));
+
+    worksheet["!cols"] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Participants"
     );
-  }
 
-  /* =========================
-     SAVE FILE
-  ========================= */
-  doc.save(
-    `IKIGAI_2026_Report_Track_${track?.id || "Unknown"}.pdf`
-  );
-};
+    XLSX.writeFile(
+      workbook,
+      `IKIGAI_2026_Participants_Track_${track.id}.xlsx`
+    );
+  };
 
 
-const submissionUrl =
-  selectedParticipant?.submissionLink
-    ? selectedParticipant.submissionLink.startsWith("http")
-      ? selectedParticipant.submissionLink
-      : `https://${selectedParticipant.submissionLink}`
-    : "";
+  const exportParticipantsPDF = () => {
+    if (!filteredParticipants || filteredParticipants.length === 0) {
+      alert("No participants to export");
+      return;
+    }
+
+    const doc = new jsPDF("p", "mm", "a4");
+
+    /* =========================
+       GLOBAL FONT SETUP
+    ========================= */
+    doc.setFont("helvetica", "normal");
+
+    /* =========================
+       HEADER (IKIGAI 2026)
+    ========================= */
+    doc.setFillColor(250, 245, 255); // purple-50
+    doc.rect(0, 0, 210, 34, "F");
+
+    // Add the IKIGAI logo (left aligned, aspect ratio maintained)
+    doc.addImage(ikigaiLogo, "PNG", 14, 8, 45, 15);
+
+    // Add Assessment Report header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(107, 33, 168); // purple-800
+    doc.text("Assessment Report", 105, 20, { align: "center" });
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 32, 196, 32);
+
+    /* =========================
+       META INFORMATION
+    ========================= */
+    let y = 40;
+
+    doc.setFontSize(10);
+    doc.setTextColor(31, 41, 55);
+
+    doc.text(`Event: ${local?.title || "-"}`, 14, y);
+    y += 6;
+
+    doc.text(`Track: ${track?.id || "-"} – ${track?.title || "-"}`, 14, y);
+    y += 6;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Session Chairs:", 14, y);
+    doc.setFont("helvetica", "normal");
+
+    const trackSessionChairs = (sessionChairs || []).filter(
+      (c) => String(c.trackId) === String(trackId)
+    );
+
+    const chairText =
+      trackSessionChairs.length > 0
+        ? trackSessionChairs.map((c) => `${c.name} (${c.type})`).join(", ")
+        : "Not Assigned";
+
+    doc.text(chairText, 45, y, { maxWidth: 140 });
+    y += 12;
+
+    /* =========================
+       PARTICIPANT TABLE
+    ========================= */
+    const tableRows = filteredParticipants.map((p, index) => {
+      let marks = "Pending";
+      let isAbsent = false;
+
+      if (typeof p?.assessment?.total === "number") {
+        if (p.assessment.total === 0) {
+          marks = "Absent";
+          isAbsent = true;
+        } else {
+          marks = p.assessment.total;
+        }
+      }
+
+      const leaderName = p.members?.find(m => m.isLeader)?.name || p.members?.[0]?.name || p.presenterName || "";
+
+      return [
+        index + 1,
+        p.paperId || "",
+        p.teamName || "",
+        p.problemStatement || "",
+        leaderName,
+        p.phone || "",
+        p.email || "",
+        {
+          content: marks,
+          styles: isAbsent
+            ? { textColor: [220, 38, 38], fontStyle: "bold" }
+            : {},
+        },
+      ];
+    });
+
+    autoTable(doc, {
+      startY: y,
+      head: [[
+        "S.No",
+        "Team ID",
+        "Team Name",
+        "Problem Statement",
+        "Team Leader",
+        "Phone",
+        "Email",
+        "Marks",
+      ]],
+      body: tableRows,
+      theme: "grid",
+      styles: {
+        font: "helvetica",
+        fontSize: 9,
+        cellPadding: 3,
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [107, 33, 168], // purple-800
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 15 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 22 },
+        6: { cellWidth: 35 },
+        7: { cellWidth: 20 },
+      },
+      margin: { left: 14, right: 14 },
+      pageBreak: "auto",
+    });
+
+    /* =========================
+       FOOTER
+    ========================= */
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(9);
+      doc.setTextColor(107, 114, 128);
+      doc.text(
+        `Generated for Ikigai 2026 • Page ${i} of ${pageCount}`,
+        105,
+        290,
+        { align: "center" }
+      );
+    }
+
+    /* =========================
+       SAVE FILE
+    ========================= */
+    doc.save(
+      `IKIGAI_2026_Report_Track_${track?.id || "Unknown"}.pdf`
+    );
+  };
 
 
+  const submissionUrl =
+    selectedParticipant?.submissionLink
+      ? selectedParticipant.submissionLink.startsWith("http")
+        ? selectedParticipant.submissionLink
+        : `https://${selectedParticipant.submissionLink}`
+      : "";
+
+  if (!track) return null;
 
   return (
     <div className="space-y-8">
 
-{/* TRACK INFO */}
-{/* TRACK INFO */}
-<div className="bg-white rounded-2xl p-4 md:p-6 border border-green-100 shadow-sm">
-  <div className="flex flex-col md:flex-row md:items-start gap-6">
+      {/* TRACK INFO */}
+      {/* TRACK INFO */}
+      <div className="bg-white rounded-2xl p-4 md:p-6 border border-green-100 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-start gap-6">
 
-    {/* LEFT: Track details */}
-    <div className="flex-1 md:pr-4">
-      <h2 className="text-2xl font-bold text-green-700">
-        {track.title}
-      </h2>
+          {/* LEFT: Track details */}
+          <div className="flex-1 md:pr-4">
+            <h2 className="text-2xl font-bold text-green-700">
+              {track.title}
+            </h2>
 
-      <p className="text-sm text-gray-500 mt-1">
-        Track ID: {track.id}
-      </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Track ID: {track.id}
+            </p>
 
-      <p className="
+            <p className="
         mt-4 text-sm text-gray-700
         text-justify leading-relaxed indent-6
       ">
-        {track.description}
-      </p>
-    </div>
+              {track.description}
+            </p>
+          </div>
 
-    {/* RIGHT / BELOW (mobile): Student Coordinator */}
-    {studentCoordinator && (
-      <div className="
+          {/* RIGHT / BELOW (mobile): Student Coordinator */}
+          {studentCoordinator && (
+            <div className="
         w-full md:w-64
         bg-green-50 border border-green-100
         rounded-xl p-4
         text-sm text-gray-700
         shrink-0
       ">
-        <div className="font-semibold text-green-700 mb-2">
-          Student Coordinator
+              <div className="font-semibold text-green-700 mb-2">
+                Student Coordinator
+              </div>
+
+              <ul className="space-y-1">
+                <li className="break-words">
+                  {studentCoordinator.name}
+                </li>
+
+                <li className="flex items-center gap-1 min-w-0">
+                  <span className="truncate" title={studentCoordinator.email}>
+                    {studentCoordinator.email}
+                  </span>
+                </li>
+
+                <li>
+                  {studentCoordinator.phone}
+                </li>
+              </ul>
+            </div>
+          )}
+
         </div>
-
-        <ul className="space-y-1">
-          <li className="break-words">
-            {studentCoordinator.name}
-          </li>
-
-          <li className="flex items-center gap-1 min-w-0">
-            <span className="truncate" title={studentCoordinator.email}>
-              {studentCoordinator.email}
-            </span>
-          </li>
-
-          <li>
-            {studentCoordinator.phone}
-          </li>
-        </ul>
       </div>
-    )}
-
-  </div>
-</div>
 
 
-{/* ===== TRACK CONTROLS: LOCK ===== */}
-<div
-  className="
+      {/* ===== TRACK CONTROLS: LOCK ===== */}
+      <div
+        className="
     mt-5
     flex items-center justify-center
     rounded-xl border border-green-100
     bg-white p-4
   "
->
-  {/* 🔒 Assessment Lock */}
-  <button
-    onClick={() => onToggleAssessmentLock(trackId)}
-    className={`px-5 py-2 rounded-md font-semibold w-full max-w-xs ${
-      track.assessmentLocked
-        ? "bg-red-600 text-white"
-        : "bg-green-600 text-white"
-    }`}
-  >
-    {track.assessmentLocked
-      ? "Assessment Locked 🔒"
-      : "Assessment Unlocked 🔓"}
-  </button>
-</div>
-      {/* EVALUATORS */}
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-  {chairs.map((c) => (
-    <div
-      key={c._id}
-      className="rounded-xl border border-green-100 p-4 bg-white shadow-sm"
-    >
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="font-semibold text-gray-800">
-            {c.name}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {c.type} Evaluator
-          </div>
-        </div>
-
-        <span
-          className={`px-2 py-1 text-xs rounded-full ${
-            c.type === "Internal"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-purple-100 text-purple-700"
-          }`}
-        >
-          {c.type}
-        </span>
-      </div>
-
-      <div className="text-sm text-gray-600 mt-3">
-        {c.email}
-      </div>
-      <div className="text-sm text-gray-600">
-        {c.phone}
-      </div>
-
-      {/* ✅ RESEND INVITATION BUTTON */}
-      <button
-        onClick={async () => {
-          if (!window.confirm("Resend invitation email to this chair?")) return;
-
-          const res = await fetch(
-            `${API_BASE}/api/admin/session-chairs/${c._id}/resend-invite`,
-            { method: "POST" }
-          );
-
-          const data = await res.json();
-
-          if (data.success) {
-            alert("Invitation email resent successfully.");
-          } else {
-            alert(data.message || "Failed to resend invitation");
-          }
-        }}
-        className="mt-3 text-sm text-green-700 hover:underline"
       >
-        Resend Invitation
-      </button>
-    </div>
-  ))}
-</div>
-
-
-
-
-{/* PARTICIPANTS SECTION */}
-<div className="bg-white rounded-2xl border border-green-100 p-5 space-y-4">
-
-  {/* Header */}
-  <div className="flex items-center justify-between">
-    <h3 className="text-lg font-semibold text-green-700">
-      Participants
-    </h3>
-    <span className="text-sm text-gray-500">
-      Total: {filteredParticipants.length}
-    </span>
-  </div>
-<div className="flex flex-wrap items-center gap-3">
-  <button
-    onClick={exportParticipantsCSV}
-    className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
-  >
-    Export CSV
-  </button>
-
-  <button
-    onClick={exportParticipantsXLSX}
-    className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
-  >
-    Export XLSX
-  </button>
-
-  <button
-    onClick={exportParticipantsPDF}
-    className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 transition"
-  >
-    Export PDF
-  </button>
-</div>
-
-
-  {/* Controls */}
-<div className="flex flex-col gap-4">
-
-  {/* ================= SORTING ================= */}
-  <div className="flex flex-wrap items-center gap-3">
-    <span className="text-sm font-semibold text-gray-700">
-      Sort
-    </span>
-
-    {/* Sort By */}
-    <select
-      value={sortBy}
-      onChange={(e) => setSortBy(e.target.value)}
-      className="border rounded-lg px-3 py-1.5 text-sm"
-    >
-      <option value="">Select field</option>
-      <option value="paperId">Team ID</option>
-      <option value="marks">Total Marks</option>
-    </select>
-
-    {/* Sort Order */}
-    <select
-      value={sortOrder}
-      onChange={(e) => setSortOrder(e.target.value)}
-      className="border rounded-lg px-3 py-1.5 text-sm"
-    >
-      <option value="asc">Ascending</option>
-      <option value="desc">Descending</option>
-    </select>
-
-    {/* Merit Limit */}
-    <select
-      value={topLimit}
-      onChange={(e) => setTopLimit(Number(e.target.value))}
-      className="border rounded-lg px-3 py-1.5 text-sm"
-    >
-      <option value={0}>Show all</option>
-      <option value={2}>Top 2</option>
-      <option value={3}>Top 3</option>
-      <option value={5}>Top 5</option>
-    </select>
-  </div>
-
-  {/* ================= FILTERING ================= */}
-  <div className="flex flex-wrap items-center gap-3">
-    <span className="text-sm font-semibold text-gray-700">
-      Filter
-    </span>
-
-    {/* Institute */}
-    <input
-      type="text"
-      placeholder="Institute"
-      value={filterInstitute}
-      onChange={(e) => setFilterInstitute(e.target.value)}
-      className="border rounded-lg px-3 py-1.5 text-sm"
-    />
-
-    {/* Branch */}
-    <input
-      type="text"
-      placeholder="Branch"
-      value={filterBranch}
-      onChange={(e) => setFilterBranch(e.target.value)}
-      className="border rounded-lg px-3 py-1.5 text-sm"
-    />
-
-    {/* Marks Range */}
-    <input
-      type="number"
-      placeholder="Min marks"
-      className="border rounded-lg px-2 py-1.5 text-sm w-24"
-      value={marksRange[0]}
-      onChange={(e) =>
-        setMarksRange([Number(e.target.value), marksRange[1]])
-      }
-    />
-
-    <span className="text-gray-400 text-sm">–</span>
-
-    <input
-      type="number"
-      placeholder="Max marks"
-      className="border rounded-lg px-2 py-1.5 text-sm w-24"
-      value={marksRange[1]}
-      onChange={(e) =>
-        setMarksRange([marksRange[0], Number(e.target.value)])
-      }
-    />
-  </div>
-</div>
-
-
-  {/* Participants List */}
-  <div className="space-y-2">
-    {/*PARTICIPANTS LIST */}
-<div className="space-y-2">
-  {filteredParticipants.map((p, index) => (
-    <div
-      key={p._id}
-      className="bg-white border border-green-100 rounded-xl px-4 py-3 flex items-center justify-between gap-4 hover:shadow-sm transition"
-    >
-      {/* LEFT CONTENT */}
-      <div className="flex-1 min-w-0">
-        {/* Top row */}
-        <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
-
-          {/* Serial */}
-          <span className="text-xs text-gray-400">
-            #{index + 1}
-          </span>
-
-          {/* Team ID Tag */}
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-            {p.paperId}
-          </span>
-
-          {/* Presenter Name */}
-          <span className="font-semibold text-gray-900">
-            {p.presenterName}
-          </span>
-        </div>
-
-        {/* Problem Statement and Team Name */}
-        <div className="mt-1 text-sm text-gray-700 truncate">
-          <b>Team:</b> {p.teamName} &nbsp;|&nbsp; <b>Problem:</b> {p.problemStatement}
-        </div>
-
-        {/* Institute + Branch */}
-        <div className="mt-0.5 text-xs text-gray-500 italic">
-          {p.institute} • {p.branch}
-        </div>
-      </div>
-
-      {/* RIGHT SIDE */}
-      <div className="flex flex-col items-end gap-2 shrink-0">
-        {/* Marks */}
-        {p.status === "EVALUATED" ? (
-          <span className="font-semibold text-gray-800 flex items-center gap-1">
-              {sortBy === "marks" && sortOrder === "desc" && index === 0 && "🥇"}
-              {sortBy === "marks" && sortOrder === "desc" && index === 1 && "🥈"}
-              {sortBy === "marks" && sortOrder === "desc" && index === 2 && "🥉"}
-              {p.assessment?.total ?? "N/A"}
-            </span>
-          ) : (
-            <span className="text-xs italic text-gray-500">Pending</span>
-          )}
-
-
-        {/* View details */}
+        {/* 🔒 Assessment Lock */}
         <button
-          onClick={() => setSelectedParticipant(p)}
-          className="text-xs font-medium text-green-700 hover:underline"
+          onClick={() => onToggleAssessmentLock(trackId)}
+          className={`px-5 py-2 rounded-md font-semibold w-full max-w-xs ${track.assessmentLocked
+            ? "bg-red-600 text-white"
+            : "bg-green-600 text-white"
+            }`}
         >
-          View details
+          {track.assessmentLocked
+            ? "Assessment Locked 🔒"
+            : "Assessment Unlocked 🔓"}
         </button>
       </div>
-    </div>
-  ))}
-</div>
-{selectedParticipant && (() => {
-  const displayMembers = selectedParticipant.members?.length > 0 
-    ? selectedParticipant.members 
-    : [
-        { 
-          name: selectedParticipant.presenterName || "Unknown", 
-          email: selectedParticipant.email, 
-          mobile: selectedParticipant.phone, 
-          institute: selectedParticipant.institute, 
-          course: selectedParticipant.branch,
-          isLeader: true, 
-          candidateRole: 'Presenter' 
-        },
-        ...(selectedParticipant.coAuthors || []).map(c => ({ 
-          name: c.name, 
-          email: c.email, 
-          candidateRole: 'Co-Author', 
-          isLeader: false 
-        }))
-      ];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Modal Header */}
-        <div className="flex-shrink-0 border-b border-gray-100 bg-gray-50/80 px-6 py-5 relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-purple-500"></div>
-          <button
-            onClick={() => setSelectedParticipant(null)}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+      {/* EVALUATORS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {chairs.map((c) => (
+          <div
+            key={c._id}
+            className="rounded-xl border border-green-100 p-4 bg-white shadow-sm"
           >
-            <X size={20} />
-          </button>
-          <div className="flex items-start justify-between pr-10">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight truncate">
-                  {selectedParticipant.teamName || "Unnamed Team"}
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-md bg-violet-50 text-violet-700 border border-violet-200 font-mono text-xs font-bold shadow-sm">
-                  {selectedParticipant.paperId}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1.5 font-medium text-gray-700">
-                  <CheckCircle size={15} className="text-emerald-500" />
-                  {selectedParticipant.trackName || selectedParticipant.track || track?.title || "No Track"}
-                </span>
-                {(selectedParticipant.status || selectedParticipant.regStatus) && (
-                  <>
-                    <span className="text-gray-300">•</span>
-                    <span className="uppercase tracking-wider text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      {selectedParticipant.status || selectedParticipant.regStatus}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30">
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Left Column (Project Details) */}
-              <div className="lg:col-span-1">
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 h-full">
-                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <FileText size={16} className="text-violet-500" /> Project Details
-                  </h3>
-                  
-                  <div className="space-y-4 text-sm text-gray-700">
-                    <div>
-                      <span className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Problem Statement</span>
-                      <p className="font-medium text-gray-900 leading-relaxed">{selectedParticipant.problemStatement || selectedParticipant.problemStatement || "—"}</p>
-                    </div>
-                    
-                    {selectedParticipant.description && (
-                      <div>
-                        <span className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Description</span>
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedParticipant.description}</p>
-                      </div>
-                    )}
-
-                    {(selectedParticipant.pptLink || selectedParticipant.submissionLink) && (
-                      <div>
-                        <span className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Presentation</span>
-                        <a 
-                          href={
-                            (selectedParticipant.pptLink || selectedParticipant.submissionLink).includes('drive.google.com') || (selectedParticipant.pptLink || selectedParticipant.submissionLink).includes('docs.google.com')
-                              ? (selectedParticipant.pptLink || selectedParticipant.submissionLink)
-                              : `https://docs.google.com/viewer?url=${encodeURIComponent(selectedParticipant.pptLink || selectedParticipant.submissionLink)}`
-                          } 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg text-sm font-semibold transition-colors border border-violet-200"
-                        >
-                          <Link2 size={15} /> View PPT
-                        </a>
-                      </div>
-                    )}
-                  </div>
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold text-gray-800">
+                  {c.name}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {c.type} Evaluator
                 </div>
               </div>
 
-              {/* Right Column (Evaluation Tables) */}
-              <div className="lg:col-span-2">
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 h-full flex flex-col overflow-y-auto max-h-[600px] custom-scrollbar">
-                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <CheckCircle size={16} className="text-emerald-500" /> Evaluation Records
-                  </h3>
-                  
-                  <div className="flex-1 space-y-6">
-                    {selectedParticipant.assessments?.length > 0 ? (
-                      selectedParticipant.assessments.map((assessment, aIdx) => {
-                        // Find evaluator name
-                        const evalIdToMatch = typeof assessment.evaluatorId === 'object' && assessment.evaluatorId ? assessment.evaluatorId._id : assessment.evaluatorId;
-                        const evaluator = selectedParticipant.assignedEvaluators?.find(e => String(e._id) === String(evalIdToMatch));
-                        const evaluatorName = assessment.evaluatorId?.name || evaluator?.name || assessment.evaluatedBy || `Evaluator ${aIdx + 1}`;
-                        
-                        let parsedComments = [];
-                        if (assessment.comments) {
-                          parsedComments = assessment.comments;
-                        } else if (assessment.notes?.startsWith("JSON:")) {
-                          try {
-                            parsedComments = JSON.parse(assessment.notes.substring(5));
-                          } catch (e) {}
-                        }
+              <span
+                className={`px-2 py-1 text-xs rounded-full ${c.type === "Internal"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-purple-100 text-purple-700"
+                  }`}
+              >
+                {c.type}
+              </span>
+            </div>
 
-                        return (
-                          <div key={aIdx} className="border border-violet-100 rounded-lg overflow-hidden shadow-sm">
-                            <div className="bg-violet-50 border-b border-violet-200 px-4 py-2.5 flex justify-between items-center">
-                              <div className="font-semibold text-violet-900 text-sm flex items-center gap-2">
-                                <span className="bg-violet-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">{aIdx + 1}</span>
-                                {evaluatorName}
+            <div className="text-sm text-gray-600 mt-3">
+              {c.email}
+            </div>
+            <div className="text-sm text-gray-600">
+              {c.phone}
+            </div>
+
+            {/* ✅ RESEND INVITATION BUTTON */}
+            <button
+              onClick={async () => {
+                if (!window.confirm("Resend invitation email to this chair?")) return;
+
+                const res = await fetch(
+                  `${API_BASE}/api/admin/session-chairs/${c._id}/resend-invite`,
+                  { method: "POST" }
+                );
+
+                const data = await res.json();
+
+                if (data.success) {
+                  alert("Invitation email resent successfully.");
+                } else {
+                  alert(data.message || "Failed to resend invitation");
+                }
+              }}
+              className="mt-3 text-sm text-green-700 hover:underline"
+            >
+              Resend Invitation
+            </button>
+          </div>
+        ))}
+      </div>
+
+
+
+
+      {/* PARTICIPANTS SECTION */}
+      <div className="bg-white rounded-2xl border border-green-100 p-5 space-y-4">
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-green-700">
+            Participants
+          </h3>
+          <span className="text-sm text-gray-500">
+            Total: {filteredParticipants.length}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={exportParticipantsCSV}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+          >
+            Export CSV
+          </button>
+
+          <button
+            onClick={exportParticipantsXLSX}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+          >
+            Export XLSX
+          </button>
+
+          <button
+            onClick={exportParticipantsPDF}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 transition"
+          >
+            Export PDF
+          </button>
+        </div>
+
+
+        {/* Controls */}
+        <div className="flex flex-col gap-4">
+
+          {/* ================= SORTING ================= */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700">
+              Sort
+            </span>
+
+            {/* Sort By */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value="">Select field</option>
+              <option value="paperId">Team ID</option>
+              <option value="marks">Total Marks</option>
+            </select>
+
+            {/* Sort Order */}
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+
+            {/* Merit Limit */}
+            <select
+              value={topLimit}
+              onChange={(e) => setTopLimit(Number(e.target.value))}
+              className="border rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value={0}>Show all</option>
+              <option value={2}>Top 2</option>
+              <option value={3}>Top 3</option>
+              <option value={5}>Top 5</option>
+            </select>
+          </div>
+
+          {/* ================= FILTERING ================= */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700">
+              Filter
+            </span>
+
+            {/* Institute */}
+            <input
+              type="text"
+              placeholder="Institute"
+              value={filterInstitute}
+              onChange={(e) => setFilterInstitute(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-sm"
+            />
+
+            {/* Branch */}
+            <input
+              type="text"
+              placeholder="Branch"
+              value={filterBranch}
+              onChange={(e) => setFilterBranch(e.target.value)}
+              className="border rounded-lg px-3 py-1.5 text-sm"
+            />
+
+            {/* Marks Range */}
+            <input
+              type="number"
+              placeholder="Min marks"
+              className="border rounded-lg px-2 py-1.5 text-sm w-24"
+              value={marksRange[0]}
+              onChange={(e) =>
+                setMarksRange([Number(e.target.value), marksRange[1]])
+              }
+            />
+
+            <span className="text-gray-400 text-sm">–</span>
+
+            <input
+              type="number"
+              placeholder="Max marks"
+              className="border rounded-lg px-2 py-1.5 text-sm w-24"
+              value={marksRange[1]}
+              onChange={(e) =>
+                setMarksRange([marksRange[0], Number(e.target.value)])
+              }
+            />
+          </div>
+        </div>
+
+
+        {/* Participants List */}
+        <div className="space-y-2">
+          {/*PARTICIPANTS LIST */}
+          <div className="space-y-2">
+            {filteredParticipants.map((p, index) => (
+              <div
+                key={p._id}
+                className="bg-white border border-green-100 rounded-xl px-4 py-3 flex items-center justify-between gap-4 hover:shadow-sm transition"
+              >
+                {/* LEFT CONTENT */}
+                <div className="flex-1 min-w-0">
+                  {/* Top row */}
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
+
+                    {/* Serial */}
+                    <span className="text-xs text-gray-400">
+                      #{index + 1}
+                    </span>
+
+                    {/* Team ID Tag */}
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                      {p.paperId}
+                    </span>
+
+                    {/* Presenter Name */}
+                    <span className="font-semibold text-gray-900">
+                      {p.presenterName}
+                    </span>
+                  </div>
+
+                  {/* Problem Statement and Team Name */}
+                  <div className="mt-1 text-sm text-gray-700 truncate">
+                    <b>Team:</b> {p.teamName} &nbsp;|&nbsp; <b>Problem:</b> {p.problemStatement}
+                  </div>
+
+                  {/* Institute + Branch */}
+                  <div className="mt-0.5 text-xs text-gray-500 italic">
+                    {p.institute} • {p.branch}
+                  </div>
+                </div>
+
+                {/* RIGHT SIDE */}
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  {/* Marks */}
+                  {p.status === "EVALUATED" ? (
+                    <span className="font-semibold text-gray-800 flex items-center gap-1">
+                      {sortBy === "marks" && sortOrder === "desc" && index === 0 && "🥇"}
+                      {sortBy === "marks" && sortOrder === "desc" && index === 1 && "🥈"}
+                      {sortBy === "marks" && sortOrder === "desc" && index === 2 && "🥉"}
+                      {p.assessment?.total ?? "N/A"}
+                    </span>
+                  ) : (
+                    <span className="text-xs italic text-gray-500">Pending</span>
+                  )}
+
+
+                  {/* View details */}
+                  <button
+                    onClick={() => setSelectedParticipant(p)}
+                    className="text-xs font-medium text-green-700 hover:underline"
+                  >
+                    View details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {selectedParticipant && (() => {
+            const displayMembers = selectedParticipant.members?.length > 0
+              ? selectedParticipant.members
+              : [
+                {
+                  name: selectedParticipant.presenterName || "Unknown",
+                  email: selectedParticipant.email,
+                  mobile: selectedParticipant.phone,
+                  institute: selectedParticipant.institute,
+                  course: selectedParticipant.branch,
+                  isLeader: true,
+                  candidateRole: 'Presenter'
+                },
+                ...(selectedParticipant.coAuthors || []).map(c => ({
+                  name: c.name,
+                  email: c.email,
+                  candidateRole: 'Co-Author',
+                  isLeader: false
+                }))
+              ];
+
+            return (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <div className="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+                  {/* Modal Header */}
+                  <div className="flex-shrink-0 border-b border-gray-100 bg-gray-50/80 px-6 py-5 relative">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-purple-500"></div>
+                    <button
+                      onClick={() => setSelectedParticipant(null)}
+                      className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <X size={20} />
+                    </button>
+                    <div className="flex items-start justify-between pr-10">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight truncate">
+                            {selectedParticipant.teamName || "Unnamed Team"}
+                          </h2>
+                          <span className="px-2.5 py-0.5 rounded-md bg-violet-50 text-violet-700 border border-violet-200 font-mono text-xs font-bold shadow-sm">
+                            {selectedParticipant.paperId}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1.5 font-medium text-gray-700">
+                            <CheckCircle size={15} className="text-emerald-500" />
+                            {selectedParticipant.trackName || selectedParticipant.track || track?.title || "No Track"}
+                          </span>
+                          {(selectedParticipant.status || selectedParticipant.regStatus) && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <span className="uppercase tracking-wider text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                {selectedParticipant.status || selectedParticipant.regStatus}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modal Body (Scrollable) */}
+                  <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                        {/* Left Column (Project Details) */}
+                        <div className="lg:col-span-1">
+                          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 h-full">
+                            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                              <FileText size={16} className="text-violet-500" /> Project Details
+                            </h3>
+
+                            <div className="space-y-4 text-sm text-gray-700">
+                              <div>
+                                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Problem Statement</span>
+                                <p className="font-medium text-gray-900 leading-relaxed">{selectedParticipant.problemStatement || selectedParticipant.problemStatement || "—"}</p>
                               </div>
-                              <div className="text-xs font-bold bg-white text-violet-700 px-2 py-1 rounded shadow-sm border border-violet-200">
-                                Total: {assessment.criteria?.reduce((s, v, idx) => s + (criteriaList[idx]?.inputType !== "text" && criteriaList[idx]?.inputType !== "boolean" ? Number(v || 0) : 0), 0) || assessment.total || 0}
-                              </div>
-                            </div>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 border-b border-gray-200">
-                                  <tr>
-                                    <th className="px-4 py-2 font-bold text-gray-700 whitespace-nowrap">Criteria</th>
-                                    <th className="px-4 py-2 font-bold text-gray-700 text-center w-20">Marks</th>
-                                    <th className="px-4 py-2 font-bold text-gray-700">Comments</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 bg-white">
-                                  {criteriaList.map((c, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50/50">
-                                      <td className="px-4 py-2.5 text-gray-600 font-medium whitespace-nowrap">{c.name}</td>
-                                      <td className="px-4 py-2.5 text-center font-bold text-gray-900">
-                                        {c.inputType === "boolean" 
-                                          ? ((assessment.criteria?.[idx] === true || assessment.criteria?.[idx] === "true") ? "Shortlisted / Yes" : "No")
-                                          : c.inputType === "text"
-                                            ? (assessment.criteria?.[idx] || "-")
-                                            : (assessment.criteria?.[idx] ?? 0)}
-                                      </td>
-                                      <td className="px-4 py-2.5 text-gray-600 text-xs italic">
-                                        {parsedComments[idx] || "No comment"}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+
+                              {selectedParticipant.description && (
+                                <div>
+                                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Description</span>
+                                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedParticipant.description}</p>
+                                </div>
+                              )}
+
+                              {(selectedParticipant.pptLink || selectedParticipant.submissionLink) && (
+                                <div>
+                                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Presentation</span>
+                                  <a
+                                    href={
+                                      (selectedParticipant.pptLink || selectedParticipant.submissionLink).includes('drive.google.com') || (selectedParticipant.pptLink || selectedParticipant.submissionLink).includes('docs.google.com')
+                                        ? (selectedParticipant.pptLink || selectedParticipant.submissionLink)
+                                        : `https://docs.google.com/viewer?url=${encodeURIComponent(selectedParticipant.pptLink || selectedParticipant.submissionLink)}`
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg text-sm font-semibold transition-colors border border-violet-200"
+                                  >
+                                    <Link2 size={15} /> View PPT
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        );
-                      })
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 h-full min-h-[200px]">
-                        <span className="text-gray-400 mb-2">No assessments completed yet</span>
-                        <span className="text-xl text-violet-700 font-extrabold">Pending</span>
+                        </div>
+
+                        {/* Right Column (Evaluation Tables) */}
+                        <div className="lg:col-span-2">
+                          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 h-full flex flex-col overflow-y-auto max-h-[600px] custom-scrollbar">
+                            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                              <CheckCircle size={16} className="text-emerald-500" /> Evaluation Records
+                            </h3>
+
+                            <div className="flex-1 space-y-6">
+                              {selectedParticipant.assessments?.length > 0 ? (
+                                selectedParticipant.assessments.map((assessment, aIdx) => {
+                                  // Find evaluator name
+                                  const evalIdToMatch = typeof assessment.evaluatorId === 'object' && assessment.evaluatorId ? assessment.evaluatorId._id : assessment.evaluatorId;
+                                  const evaluator = selectedParticipant.assignedEvaluators?.find(e => String(e._id) === String(evalIdToMatch));
+                                  const evaluatorName = assessment.evaluatorId?.name || evaluator?.name || assessment.evaluatedBy || `Evaluator ${aIdx + 1}`;
+
+                                  let parsedComments = [];
+                                  if (assessment.comments) {
+                                    parsedComments = assessment.comments;
+                                  } else if (assessment.notes?.startsWith("JSON:")) {
+                                    try {
+                                      parsedComments = JSON.parse(assessment.notes.substring(5));
+                                    } catch (e) { }
+                                  }
+
+                                  return (
+                                    <div key={aIdx} className="border border-violet-100 rounded-lg overflow-hidden shadow-sm">
+                                      <div className="bg-violet-50 border-b border-violet-200 px-4 py-2.5 flex justify-between items-center">
+                                        <div className="font-semibold text-violet-900 text-sm flex items-center gap-2">
+                                          <span className="bg-violet-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">{aIdx + 1}</span>
+                                          {evaluatorName}
+                                        </div>
+                                        <div className="text-xs font-bold bg-white text-violet-700 px-2 py-1 rounded shadow-sm border border-violet-200">
+                                          Total: {assessment.criteria?.reduce((s, v, idx) => s + (criteriaList[idx]?.inputType !== "text" && criteriaList[idx]?.inputType !== "boolean" ? Number(v || 0) : 0), 0) || assessment.total || 0}
+                                        </div>
+                                      </div>
+                                      <div className="overflow-x-auto">
+                                        <table className="w-full text-sm text-left">
+                                          <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                              <th className="px-4 py-2 font-bold text-gray-700 whitespace-nowrap">Criteria</th>
+                                              <th className="px-4 py-2 font-bold text-gray-700 text-center w-20">Marks</th>
+                                              <th className="px-4 py-2 font-bold text-gray-700">Comments</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-gray-100 bg-white">
+                                            {criteriaList.map((c, idx) => (
+                                              <tr key={idx} className="hover:bg-gray-50/50">
+                                                <td className="px-4 py-2.5 text-gray-600 font-medium whitespace-nowrap">{c.name}</td>
+                                                <td className="px-4 py-2.5 text-center font-bold text-gray-900">
+                                                  {c.inputType === "boolean"
+                                                    ? ((assessment.criteria?.[idx] === true || assessment.criteria?.[idx] === "true") ? "Shortlisted / Yes" : "No")
+                                                    : c.inputType === "text"
+                                                      ? (assessment.criteria?.[idx] || "-")
+                                                      : (assessment.criteria?.[idx] ?? 0)}
+                                                </td>
+                                                <td className="px-4 py-2.5 text-gray-600 text-xs italic">
+                                                  {parsedComments[idx] || "No comment"}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 h-full min-h-[200px]">
+                                  <span className="text-gray-400 mb-2">No assessments completed yet</span>
+                                  <span className="text-xl text-violet-700 font-extrabold">Pending</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    )}
+
+                      {/* Bottom Row (Team Members) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {displayMembers.map((m, idx) => (
+                          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-violet-200 hover:shadow-md transition-all">
+                            <div className={`absolute top-0 left-0 w-1 h-full ${m.isLeader ? 'bg-violet-500' : 'bg-gray-300 group-hover:bg-violet-300'}`}></div>
+
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="min-w-0 pr-2">
+                                <h4 className="font-bold text-gray-900 text-base truncate" title={m.name}>{m.name || "Unknown"}</h4>
+                                <span className={`inline-block mt-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${m.isLeader ? 'text-violet-700 bg-violet-50 border border-violet-100' : 'text-gray-500 bg-gray-100'}`}>
+                                  {m.candidateRole || (m.isLeader ? "Team Leader" : "Team Member")}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2.5 text-sm text-gray-600">
+                              {m.email && (
+                                <div className="flex items-center gap-2.5 truncate" title={m.email}>
+                                  <Mail size={15} className="text-gray-400 flex-shrink-0" /> <span className="truncate">{m.email}</span>
+                                </div>
+                              )}
+                              {m.mobile && (
+                                <div className="flex items-center gap-2.5">
+                                  <Phone size={15} className="text-gray-400 flex-shrink-0" /> <span>{m.mobile}</span>
+                                </div>
+                              )}
+                              {m.location && (
+                                <div className="flex items-center gap-2.5 truncate" title={m.location}>
+                                  <MapPin size={15} className="text-gray-400 flex-shrink-0" /> <span className="truncate">{m.location}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
+                              {(m.institute || m.organisation) && (
+                                <div className="flex items-center gap-2 text-xs text-gray-500 truncate" title={m.institute || m.organisation}>
+                                  <Building2 size={13} className="text-gray-400 flex-shrink-0" />
+                                  <span className="truncate font-medium">{m.institute || m.organisation}</span>
+                                </div>
+                              )}
+                              {(m.course || m.branch || m.domain || m.specialization) && (
+                                <div className="flex items-center gap-2 text-xs text-gray-500 truncate" title={`${m.course || ''} ${m.branch || m.specialization || m.domain || ''}`}>
+                                  <BookOpen size={13} className="text-gray-400 flex-shrink-0" />
+                                  <span className="truncate">{(m.course || '') + ((m.course && (m.branch || m.specialization || m.domain)) ? ' - ' : '') + (m.branch || m.specialization || m.domain || '')}</span>
+                                </div>
+                              )}
+                              {m.userType && (
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <GraduationCap size={13} className="text-gray-400 flex-shrink-0" />
+                                  <span>{m.userType}</span>
+                                </div>
+                              )}
+                            </div>
+
+                          </div>
+                        ))}
+                      </div>
+
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Bottom Row (Team Members) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayMembers.map((m, idx) => (
-                <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-violet-200 hover:shadow-md transition-all">
-                  <div className={`absolute top-0 left-0 w-1 h-full ${m.isLeader ? 'bg-violet-500' : 'bg-gray-300 group-hover:bg-violet-300'}`}></div>
-                  
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="min-w-0 pr-2">
-                      <h4 className="font-bold text-gray-900 text-base truncate" title={m.name}>{m.name || "Unknown"}</h4>
-                      <span className={`inline-block mt-1 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${m.isLeader ? 'text-violet-700 bg-violet-50 border border-violet-100' : 'text-gray-500 bg-gray-100'}`}>
-                        {m.candidateRole || (m.isLeader ? "Team Leader" : "Team Member")}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2.5 text-sm text-gray-600">
-                    {m.email && (
-                      <div className="flex items-center gap-2.5 truncate" title={m.email}>
-                        <Mail size={15} className="text-gray-400 flex-shrink-0" /> <span className="truncate">{m.email}</span>
-                      </div>
-                    )}
-                    {m.mobile && (
-                      <div className="flex items-center gap-2.5">
-                        <Phone size={15} className="text-gray-400 flex-shrink-0" /> <span>{m.mobile}</span>
-                      </div>
-                    )}
-                    {m.location && (
-                      <div className="flex items-center gap-2.5 truncate" title={m.location}>
-                        <MapPin size={15} className="text-gray-400 flex-shrink-0" /> <span className="truncate">{m.location}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
-                    {(m.institute || m.organisation) && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500 truncate" title={m.institute || m.organisation}>
-                        <Building2 size={13} className="text-gray-400 flex-shrink-0" />
-                        <span className="truncate font-medium">{m.institute || m.organisation}</span>
-                      </div>
-                    )}
-                    {(m.course || m.branch || m.domain || m.specialization) && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500 truncate" title={`${m.course || ''} ${m.branch || m.specialization || m.domain || ''}`}>
-                        <BookOpen size={13} className="text-gray-400 flex-shrink-0" />
-                        <span className="truncate">{(m.course || '') + ((m.course && (m.branch || m.specialization || m.domain)) ? ' - ' : '') + (m.branch || m.specialization || m.domain || '')}</span>
-                      </div>
-                    )}
-                    {m.userType && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <GraduationCap size={13} className="text-gray-400 flex-shrink-0" />
-                        <span>{m.userType}</span>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              ))}
-            </div>
-            
-          </div>
+            );
+          })()}
         </div>
       </div>
-    </div>
-  );
-})()}
-  </div>
-</div>
     </div>
   );
 }
@@ -3596,33 +3586,33 @@ function TrackCard({
 
 
   const totalAssessed = participants.filter(
-  (p) => p.assessment && typeof p.assessment.total === "number"
-).length;
+    (p) => p.assessment && typeof p.assessment.total === "number"
+  ).length;
 
 
   const progressPercent =
     totalSubs > 0 ? Math.round((totalAssessed / totalSubs) * 100) : 0;
 
-    const handleCopyMeetingLink = async () => {
-  try {
-    await navigator.clipboard.writeText(normalizedMeetingLink);
+  const handleCopyMeetingLink = async () => {
+    try {
+      await navigator.clipboard.writeText(normalizedMeetingLink);
 
-    setCopied(true);
+      setCopied(true);
 
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  } catch (err) {
-    console.error("Copy failed", err);
-  }
-};
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (err) {
+      console.error("Copy failed", err);
+    }
+  };
 
-const normalizedMeetingLink =
-  track?.meetingLink
-    ? track.meetingLink.startsWith("http")
-      ? track.meetingLink
-      : `https://${track.meetingLink}`
-    : "";
+  const normalizedMeetingLink =
+    track?.meetingLink
+      ? track.meetingLink.startsWith("http")
+        ? track.meetingLink
+        : `https://${track.meetingLink}`
+      : "";
 
 
   return (
@@ -3635,26 +3625,25 @@ const normalizedMeetingLink =
             className="flex-1 pr-6 cursor-pointer"
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-  
-  {/* Track Title */}
-  <div className="text-xl font-semibold text-green-700">
-    {track.id} — {track.title}
-  </div>
 
-  {/* Start Assessment Button */}
-  <button
-    onClick={onStartAssessment}
-    disabled={track.assessmentLocked}
-    className={`px-4 py-2 rounded-md text-sm font-semibold w-fit ${
-      track.assessmentLocked
-        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-        : "bg-green-600 text-white hover:bg-green-700 transition"
-    }`}
-  >
-    {track.assessmentLocked ? "Assessment Locked" : "Start Assessment"}
-  </button>
+              {/* Track Title */}
+              <div className="text-xl font-semibold text-green-700">
+                {track.id} — {track.title}
+              </div>
 
-</div>
+              {/* Start Assessment Button */}
+              <button
+                onClick={onStartAssessment}
+                disabled={track.assessmentLocked}
+                className={`px-4 py-2 rounded-md text-sm font-semibold w-fit ${track.assessmentLocked
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-green-600 text-white hover:bg-green-700 transition"
+                  }`}
+              >
+                {track.assessmentLocked ? "Assessment Locked" : "Start Assessment"}
+              </button>
+
+            </div>
 
 
             <div className="text-sm text-justify text-gray-600 mt-1">
@@ -3668,48 +3657,48 @@ const normalizedMeetingLink =
             </div>
 
             {/* ===== Online Meeting Link ===== */}
-{track?.meetingLink && (
-  <div
-    className="
+            {track?.meetingLink && (
+              <div
+                className="
       mt-3 inline-flex items-center gap-3
       max-w-[520px]
       rounded-lg border border-emerald-200
       bg-emerald-50 px-3 py-2
     "
-  >
-    {/* Link text */}
-    <a
-  href={normalizedMeetingLink}
-  target="_blank"
-  rel="noopener noreferrer"
-  className="
+              >
+                {/* Link text */}
+                <a
+                  href={normalizedMeetingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="
     text-sm text-emerald-900
     truncate max-w-[260px]
     hover:underline
   "
-  title={normalizedMeetingLink}
->
-  {normalizedMeetingLink}
-</a>
+                  title={normalizedMeetingLink}
+                >
+                  {normalizedMeetingLink}
+                </a>
 
-    {/* Join button */}
-    <a
-  href={normalizedMeetingLink}
-  target="_blank"
-  rel="noopener noreferrer"
-  className="px-2.5 py-1 rounded-md
+                {/* Join button */}
+                <a
+                  href={normalizedMeetingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 rounded-md
              bg-emerald-600 text-white
              text-xs font-semibold
              hover:bg-emerald-700 transition"
->
-  Join
-</a>
+                >
+                  Join
+                </a>
 
 
-    {/* Copy button */}
-    <button
-      onClick={handleCopyMeetingLink}
-      className="
+                {/* Copy button */}
+                <button
+                  onClick={handleCopyMeetingLink}
+                  className="
         px-2 py-1 rounded-md
         border border-emerald-300
         bg-white text-emerald-700
@@ -3717,12 +3706,12 @@ const normalizedMeetingLink =
         hover:bg-emerald-100 transition
         whitespace-nowrap
       "
-      title="Copy meeting link"
-    >
-      {copied ? "✓ Copied" : "📋 Copy"}
-    </button>
-  </div>
-)}
+                  title="Copy meeting link"
+                >
+                  {copied ? "✓ Copied" : "📋 Copy"}
+                </button>
+              </div>
+            )}
 
 
             <div className="text-sm text-gray-500 mt-1">
@@ -3768,64 +3757,62 @@ const normalizedMeetingLink =
 
                 return (
                   <div
-                  key={p._id}
-                  className={`rounded-xl border p-4 shadow-sm transition hover:shadow-md ${
-                    isAssessed
+                    key={p._id}
+                    className={`rounded-xl border p-4 shadow-sm transition hover:shadow-md ${isAssessed
                       ? "bg-green-50 border-green-300"
                       : "bg-white border-gray-200"
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
+                      }`}
+                  >
+                    <div className="flex justify-between items-start">
 
-                    {/* LEFT */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">
-  Team ID: {p.paperId}
-</span>
-
-
-                        {isAssessed && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-600 text-white">
-                            ✔ Assessed
+                      {/* LEFT */}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">
+                            Team ID: {p.paperId}
                           </span>
-                        )}
+
+
+                          {isAssessed && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-600 text-white">
+                              ✔ Assessed
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-lg font-semibold text-green-700">
+                          {p.presenterName}
+                        </div>
+
+                        <div className="text-sm text-gray-700 font-medium">
+                          {p.problemStatement}
+                        </div>
+
+                        <div className="text-sm text-gray-600">
+                          {p.institute} • {p.branch}
+                        </div>
+
+                        <div className="text-xs text-gray-500">
+                          {p.mode} • {p.email}
+                        </div>
                       </div>
 
-                      <div className="text-lg font-semibold text-green-700">
-                        {p.presenterName}
-                      </div>
-
-                      <div className="text-sm text-gray-700 font-medium">
-                        {p.problemStatement}
-                      </div>
-
-                      <div className="text-sm text-gray-600">
-                        {p.institute} • {p.branch}
-                      </div>
-
-                      <div className="text-xs text-gray-500">
-                        {p.mode} • {p.email}
-                      </div>
-                    </div>
-
-                    {/* RIGHT */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        disabled={track.assessmentLocked}
-                        onClick={() => onOpenParticipant(idx)}
-                        className={`px-4 py-2 rounded-lg text-sm ${
-                          track.assessmentLocked
+                      {/* RIGHT */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={track.assessmentLocked}
+                          onClick={() => onOpenParticipant(idx)}
+                          className={`px-4 py-2 rounded-lg text-sm ${track.assessmentLocked
                             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                             : "bg-green-600 text-white"
-                        }`}
-                      >
-                        Assess
-                      </button>
-                    </div>
+                            }`}
+                        >
+                          Assess
+                        </button>
+                      </div>
 
+                    </div>
                   </div>
-                </div>
 
                 );
               })
@@ -3852,40 +3839,39 @@ const MemberAssessmentCard = ({ m, index, total }) => {
 
   return (
     <div className="relative w-full h-full min-h-[56px]">
-      <div className={`bg-white p-4 rounded-xl shadow-sm border overflow-hidden transition-all duration-300 flex flex-col ${
-          open 
-            ? 'absolute top-0 left-[-2%] sm:left-[-5%] w-[104%] sm:w-[110%] shadow-2xl shadow-purple-500/20 border-purple-300 z-50' 
-            : 'relative w-full h-full border-gray-200 hover:shadow-md z-10'
+      <div className={`bg-white p-4 rounded-xl shadow-sm border overflow-hidden transition-all duration-300 flex flex-col ${open
+        ? 'absolute top-0 left-[-2%] sm:left-[-5%] w-[104%] sm:w-[110%] shadow-2xl shadow-purple-500/20 border-purple-300 z-50'
+        : 'relative w-full h-full border-gray-200 hover:shadow-md z-10'
         }`}>
-        <button 
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between font-semibold text-gray-800 text-sm border-b border-gray-100 pb-2 focus:outline-none"
-      >
-         <span className="flex items-center gap-2 truncate pr-2">
-           <span className="truncate">{m.name}</span>
-           {m.isLeader && <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">Leader</span>}
-         </span>
-         <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider shrink-0">{open ? "▲ Hide" : "▼ Show"}</span>
-      </button>
-      {open && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 mt-3 pt-3 border-t border-gray-50 bg-gray-50/30 rounded-b-lg px-1 pb-1">
-           <MemberInfoField label="Org / Institute" value={m.organisation || m.institute} fullWidth />
-           <MemberInfoField label="Email" value={m.email} fullWidth />
-           <MemberInfoField label="Phone" value={m.mobile || m.phone} />
-           <MemberInfoField label="Location" value={m.location} />
-           <MemberInfoField label="Type" value={m.userType} />
-           <MemberInfoField label="Domain" value={m.domain || m.category} />
-           <MemberInfoField label="Course" value={m.course || m.degree} />
-           <MemberInfoField label="Specialization" value={m.specialization || m.branch} />
-           <MemberInfoField label="Course Type" value={m.courseType} />
-           <MemberInfoField label="Duration" value={m.courseDuration ? `${m.courseDuration} ${!isNaN(m.courseDuration) ? 'yrs' : ''}` : null} />
-           <MemberInfoField label="Grad Year" value={m.gradYear} />
-           <MemberInfoField label="Designation" value={m.designation} />
-           <MemberInfoField label="Experience" value={m.workExperience} />
-           <MemberInfoField label="Diff. Abled" value={m.differentlyAbled !== undefined && m.differentlyAbled !== "" ? (String(m.differentlyAbled) === "true" ? "Yes" : "No") : null} />
-        </div>
-      )}
-    </div>
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center justify-between font-semibold text-gray-800 text-sm border-b border-gray-100 pb-2 focus:outline-none"
+        >
+          <span className="flex items-center gap-2 truncate pr-2">
+            <span className="truncate">{m.name}</span>
+            {m.isLeader && <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">Leader</span>}
+          </span>
+          <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider shrink-0">{open ? "▲ Hide" : "▼ Show"}</span>
+        </button>
+        {open && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 mt-3 pt-3 border-t border-gray-50 bg-gray-50/30 rounded-b-lg px-1 pb-1">
+            <MemberInfoField label="Org / Institute" value={m.organisation || m.institute} fullWidth />
+            <MemberInfoField label="Email" value={m.email} fullWidth />
+            <MemberInfoField label="Phone" value={m.mobile || m.phone} />
+            <MemberInfoField label="Location" value={m.location} />
+            <MemberInfoField label="Type" value={m.userType} />
+            <MemberInfoField label="Domain" value={m.domain || m.category} />
+            <MemberInfoField label="Course" value={m.course || m.degree} />
+            <MemberInfoField label="Specialization" value={m.specialization || m.branch} />
+            <MemberInfoField label="Course Type" value={m.courseType} />
+            <MemberInfoField label="Duration" value={m.courseDuration ? `${m.courseDuration} ${!isNaN(m.courseDuration) ? 'yrs' : ''}` : null} />
+            <MemberInfoField label="Grad Year" value={m.gradYear} />
+            <MemberInfoField label="Designation" value={m.designation} />
+            <MemberInfoField label="Experience" value={m.workExperience} />
+            <MemberInfoField label="Diff. Abled" value={m.differentlyAbled !== undefined && m.differentlyAbled !== "" ? (String(m.differentlyAbled) === "true" ? "Yes" : "No") : null} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -3952,14 +3938,14 @@ function AssessmentModal({
 
       const criteria = Array(criteriaList.length).fill(0);
       if (Array.isArray(p.assessment.criteria)) {
-         p.assessment.criteria.forEach((val, idx) => {
-            if (idx < criteria.length) criteria[idx] = val;
-         });
+        p.assessment.criteria.forEach((val, idx) => {
+          if (idx < criteria.length) criteria[idx] = val;
+        });
       }
-      
+
       let justifications = Array(criteriaList.length).fill("");
       let notes = p.assessment.notes ?? "";
-      
+
       if (notes.startsWith("JSON:")) {
         try {
           justifications = JSON.parse(notes.substring(5));
@@ -4045,10 +4031,10 @@ function AssessmentModal({
       alert("Assessment is locked by admin.");
       return;
     }
-    
+
     const missingMarks = form.criteria.some(c => c === "" || c === null || c === undefined);
     const missingJustifs = form.justifications.some(j => !j || j.trim() === "");
-    
+
     if (assessmentMode === "criteria" && (missingMarks || missingJustifs)) {
       alert("Please fill all the marks and their justifications before saving.");
       return;
@@ -4222,10 +4208,10 @@ function AssessmentModal({
             <div className="text-sm text-green-100">{p.institute} • {p.branch}</div>
           </div>
           <div className="flex items-center gap-4">
-             <span className="px-3 py-1 rounded-full bg-white text-green-700 text-sm font-semibold">
-               Team ID: {p.paperId}
-             </span>
-             <button onClick={onClose} className="text-white hover:bg-green-700 p-2 rounded-full font-bold transition-colors w-8 h-8 flex items-center justify-center">✕</button>
+            <span className="px-3 py-1 rounded-full bg-white text-green-700 text-sm font-semibold">
+              Team ID: {p.paperId}
+            </span>
+            <button onClick={onClose} className="text-white hover:bg-green-700 p-2 rounded-full font-bold transition-colors w-8 h-8 flex items-center justify-center">✕</button>
           </div>
         </div>
 
@@ -4233,229 +4219,229 @@ function AssessmentModal({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/50">
-          
+
           {/* Section 1: About Team */}
           <div className={`border border-gray-200 rounded-xl shadow-sm bg-white ${openSection === 1 ? '' : 'overflow-hidden'}`}>
-            <button 
-               onClick={() => setOpenSection(openSection === 1 ? null : 1)}
-               className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left font-semibold text-gray-800"
+            <button
+              onClick={() => setOpenSection(openSection === 1 ? null : 1)}
+              className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left font-semibold text-gray-800"
             >
-               <span className="flex items-center gap-2">
-                  1. About Team
-                  {openSection !== 1 && <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">{p.mode}</span>}
-               </span>
-               <span className="text-gray-400">{openSection === 1 ? "▲" : "▼"}</span>
+              <span className="flex items-center gap-2">
+                1. About Team
+                {openSection !== 1 && <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">{p.mode}</span>}
+              </span>
+              <span className="text-gray-400">{openSection === 1 ? "▲" : "▼"}</span>
             </button>
             {openSection === 1 && (
-               <div className="p-5 border-t border-gray-100">
-                  <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-gray-700 mb-5 bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
-                     <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Team Name</span> <span className="font-medium text-gray-900">{p.teamName || p.presenterName}</span></div>
-                     <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Track</span> <span className="font-medium text-gray-900">{p.track || p.trackId || "—"}</span></div>
-                     <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Contact Email</span> <span className="font-medium text-gray-900">{p.email || "—"}</span></div>
-                     <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Contact Phone</span> <span className="font-medium text-gray-900">{p.phone || "—"}</span></div>
-                  </div>
-                  
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Team Members ({p.members?.length || 0})</h4>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {(p.members || []).map((m, idx) => (
-                      <MemberAssessmentCard key={idx} m={m} index={idx} total={(p.members || []).length} />
-                    ))}
-                  </div>
-               </div>
+              <div className="p-5 border-t border-gray-100">
+                <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-gray-700 mb-5 bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Team Name</span> <span className="font-medium text-gray-900">{p.teamName || p.presenterName}</span></div>
+                  <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Track</span> <span className="font-medium text-gray-900">{p.track || p.trackId || "—"}</span></div>
+                  <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Contact Email</span> <span className="font-medium text-gray-900">{p.email || "—"}</span></div>
+                  <div className="flex flex-col"><span className="font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Contact Phone</span> <span className="font-medium text-gray-900">{p.phone || "—"}</span></div>
+                </div>
+
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Team Members ({p.members?.length || 0})</h4>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {(p.members || []).map((m, idx) => (
+                    <MemberAssessmentCard key={idx} m={m} index={idx} total={(p.members || []).length} />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
           {/* Section 2: Problem Statement */}
           <div className={`border border-gray-200 rounded-xl shadow-sm bg-white ${openSection === 2 ? '' : 'overflow-hidden'}`}>
-            <button 
-               onClick={() => setOpenSection(openSection === 2 ? null : 2)}
-               className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left font-semibold text-gray-800"
+            <button
+              onClick={() => setOpenSection(openSection === 2 ? null : 2)}
+              className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left font-semibold text-gray-800"
             >
-               <span className="flex items-center gap-2">
-                  2. Problem Statement
-                  {openSection !== 2 && <span className="text-gray-500 font-normal text-sm ml-2 truncate max-w-xs">{p.problemStatement}</span>}
-               </span>
-               <span className="text-gray-400">{openSection === 2 ? "▲" : "▼"}</span>
+              <span className="flex items-center gap-2">
+                2. Problem Statement
+                {openSection !== 2 && <span className="text-gray-500 font-normal text-sm ml-2 truncate max-w-xs">{p.problemStatement}</span>}
+              </span>
+              <span className="text-gray-400">{openSection === 2 ? "▲" : "▼"}</span>
             </button>
             {openSection === 2 && (
-               <div className="p-5 border-t border-gray-100">
-                  <div className="mb-5 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Title</div>
-                    <div className="text-gray-800 font-medium text-sm md:text-base">{p.problemStatement}</div>
+              <div className="p-5 border-t border-gray-100">
+                <div className="mb-5 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Title</div>
+                  <div className="text-gray-800 font-medium text-sm md:text-base">{p.problemStatement}</div>
+                </div>
+                {p.description && (
+                  <div className="mb-5">
+                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Description</div>
+                    <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 p-4 rounded-xl shadow-sm">{p.description}</div>
                   </div>
-                  {p.description && (
-                    <div className="mb-5">
-                      <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Description</div>
-                      <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 p-4 rounded-xl shadow-sm">{p.description}</div>
+                )}
+
+                <div className="mt-4 pt-5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Presentation (PPT/PDF)</div>
+                    <div className="text-sm font-medium text-gray-700">
+                      {p.pptLink ? <span className="text-green-600 flex items-center gap-1">✔ Available for review</span> : <span className="text-gray-400 italic">Not uploaded</span>}
                     </div>
+                  </div>
+                  {p.pptLink && (
+                    <button onClick={() => setShowPptModal(true)} className="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-purple-700 text-sm shadow-sm transition-all hover:shadow">
+                      Open Presentation Modal
+                    </button>
                   )}
-                  
-                  <div className="mt-4 pt-5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Presentation (PPT/PDF)</div>
-                      <div className="text-sm font-medium text-gray-700">
-                         {p.pptLink ? <span className="text-green-600 flex items-center gap-1">✔ Available for review</span> : <span className="text-gray-400 italic">Not uploaded</span>}
-                      </div>
-                    </div>
-                    {p.pptLink && (
-                       <button onClick={() => setShowPptModal(true)} className="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-purple-700 text-sm shadow-sm transition-all hover:shadow">
-                          Open Presentation Modal
-                       </button>
-                    )}
-                  </div>
-               </div>
+                </div>
+              </div>
             )}
           </div>
 
           {/* Section 3: Assessment */}
           <div className={`border border-green-200 rounded-xl shadow-sm bg-white ring-1 ring-green-50 ${openSection === 3 ? '' : 'overflow-hidden'}`}>
-            <button 
-               onClick={() => setOpenSection(openSection === 3 ? null : 3)}
-               className="w-full flex justify-between items-center p-4 bg-green-50 hover:bg-green-100 transition-colors text-left font-semibold text-green-900"
+            <button
+              onClick={() => setOpenSection(openSection === 3 ? null : 3)}
+              className="w-full flex justify-between items-center p-4 bg-green-50 hover:bg-green-100 transition-colors text-left font-semibold text-green-900"
             >
-               <span>3. Assessment</span>
-               <span className="text-green-600">{openSection === 3 ? "▲" : "▼"}</span>
+              <span>3. Assessment</span>
+              <span className="text-green-600">{openSection === 3 ? "▲" : "▼"}</span>
             </button>
             {openSection === 3 && (
-               <div className="p-5 border-t border-green-100">
-                  <div className="flex gap-4 mb-6 bg-gray-50 p-2 rounded-lg border border-gray-100 inline-flex">
-                    <label className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"><input type="radio" checked={assessmentMode === "criteria"} onChange={() => setAssessmentMode("criteria")} className="text-green-600 focus:ring-green-500" /> Criteria-wise</label>
-                    {event?.allowDirectTotal !== false && (
-                      <label className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"><input type="radio" checked={assessmentMode === "direct"} onChange={() => setAssessmentMode("direct")} className="text-green-600 focus:ring-green-500" /> Direct total</label>
-                    )}
-                  </div>
+              <div className="p-5 border-t border-green-100">
+                <div className="flex gap-4 mb-6 bg-gray-50 p-2 rounded-lg border border-gray-100 inline-flex">
+                  <label className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"><input type="radio" checked={assessmentMode === "criteria"} onChange={() => setAssessmentMode("criteria")} className="text-green-600 focus:ring-green-500" /> Criteria-wise</label>
+                  {event?.allowDirectTotal !== false && (
+                    <label className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"><input type="radio" checked={assessmentMode === "direct"} onChange={() => setAssessmentMode("direct")} className="text-green-600 focus:ring-green-500" /> Direct total</label>
+                  )}
+                </div>
 
-                  {assessmentMode === "criteria" && (
-                    <div className="space-y-4 mb-6">
-                      {criteriaList.map((c, i) => (
-                        <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 md:grid-cols-[1fr_90px_2fr] gap-4 items-start shadow-sm hover:border-green-300 transition-colors">
-                          <div className="text-sm font-semibold text-gray-800 mt-1 md:pr-4">{i + 1}. {c.name}</div>
-                          <div className="flex flex-col gap-1 relative">
-                             {(!c.inputType || c.inputType === "number") && (
-                               <>
-                                 <input
-                                    type="number"
-                                    min={0} max={c.maxMarks}
-                                    value={form.criteria[i] ?? ""}
-                                    onChange={(e) => setCriteria(i, e.target.value)}
-                                    onBlur={() => {
-                                       const arr = [...form.criteria];
-                                       arr[i] = normalizeCriteriaValue(arr[i], c.maxMarks);
-                                       const total = arr.reduce((a, b, idx) => a + (criteriaList[idx]?.inputType !== "text" && criteriaList[idx]?.inputType !== "boolean" ? Number(b || 0) : 0), 0);
-                                       setForm((f) => ({ ...f, criteria: arr, total }));
-                                    }}
-                                    onFocus={(e) => e.target.select()}
-                                    className={`${activeInput} w-full text-lg font-bold text-green-700`}
-                                    placeholder="0"
-                                 />
-                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Max {c.maxMarks}</span>
-                               </>
-                             )}
-                             {c.inputType === "text" && (
-                                <input
-                                   type="text"
-                                   value={form.criteria[i] || ""}
-                                   onChange={(e) => setCriteria(i, e.target.value)}
-                                   className={`${activeInput} w-full text-sm font-medium text-gray-800`}
-                                   placeholder="Enter text..."
-                                />
-                             )}
-                             {c.inputType === "boolean" && (
-                                <label className="flex items-center justify-center gap-2 cursor-pointer h-full border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors">
-                                  <input
-                                    type="checkbox"
-                                    checked={form.criteria[i] === true || form.criteria[i] === "true"}
-                                    onChange={(e) => {
-                                      setCriteria(i, e.target.checked);
-                                    }}
-                                    className="w-5 h-5 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
-                                  />
-                                  <span className="text-sm font-bold text-gray-700">Selected</span>
-                                </label>
-                             )}
-                          </div>
-                          <div>
-                            {(event?.allowComments ?? true) && (
-                             <textarea 
-                                rows="2" 
-                                placeholder="Justification / Reason for marks..." 
-                                value={form.justifications[i] || ""} 
-                                onChange={(e) => setJustification(i, e.target.value)} 
-                                required={event?.requireComments ?? false}
-                                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-shadow resize-none"
-                             ></textarea>
-                            )}
-                          </div>
+                {assessmentMode === "criteria" && (
+                  <div className="space-y-4 mb-6">
+                    {criteriaList.map((c, i) => (
+                      <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 md:grid-cols-[1fr_90px_2fr] gap-4 items-start shadow-sm hover:border-green-300 transition-colors">
+                        <div className="text-sm font-semibold text-gray-800 mt-1 md:pr-4">{i + 1}. {c.name}</div>
+                        <div className="flex flex-col gap-1 relative">
+                          {(!c.inputType || c.inputType === "number") && (
+                            <>
+                              <input
+                                type="number"
+                                min={0} max={c.maxMarks}
+                                value={form.criteria[i] ?? ""}
+                                onChange={(e) => setCriteria(i, e.target.value)}
+                                onBlur={() => {
+                                  const arr = [...form.criteria];
+                                  arr[i] = normalizeCriteriaValue(arr[i], c.maxMarks);
+                                  const total = arr.reduce((a, b, idx) => a + (criteriaList[idx]?.inputType !== "text" && criteriaList[idx]?.inputType !== "boolean" ? Number(b || 0) : 0), 0);
+                                  setForm((f) => ({ ...f, criteria: arr, total }));
+                                }}
+                                onFocus={(e) => e.target.select()}
+                                className={`${activeInput} w-full text-lg font-bold text-green-700`}
+                                placeholder="0"
+                              />
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Max {c.maxMarks}</span>
+                            </>
+                          )}
+                          {c.inputType === "text" && (
+                            <input
+                              type="text"
+                              value={form.criteria[i] || ""}
+                              onChange={(e) => setCriteria(i, e.target.value)}
+                              className={`${activeInput} w-full text-sm font-medium text-gray-800`}
+                              placeholder="Enter text..."
+                            />
+                          )}
+                          {c.inputType === "boolean" && (
+                            <label className="flex items-center justify-center gap-2 cursor-pointer h-full border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={form.criteria[i] === true || form.criteria[i] === "true"}
+                                onChange={(e) => {
+                                  setCriteria(i, e.target.checked);
+                                }}
+                                className="w-5 h-5 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
+                              />
+                              <span className="text-sm font-bold text-gray-700">Selected</span>
+                            </label>
+                          )}
                         </div>
-                      ))}
+                        <div>
+                          {(event?.allowComments ?? true) && (
+                            <textarea
+                              rows="2"
+                              placeholder="Justification / Reason for marks..."
+                              value={form.justifications[i] || ""}
+                              onChange={(e) => setJustification(i, e.target.value)}
+                              required={event?.requireComments ?? false}
+                              className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-shadow resize-none"
+                            ></textarea>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-between bg-green-50 p-5 rounded-xl border border-green-200 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-bold text-green-900 uppercase tracking-wide">Total Score</label>
+                    <div className="flex items-baseline gap-2">
+                      <input
+                        type="number"
+                        min={0} max={maxTotalMarks}
+                        value={form.total}
+                        disabled={assessmentMode === "criteria"}
+                        onChange={(e) => setDirectTotal(e.target.value)}
+                        className={`${assessmentMode === "direct" ? "border-green-400 bg-white shadow-inner focus:ring-2 focus:ring-green-400" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"} border-2 rounded-lg px-3 py-2 w-[100px] text-center font-bold text-2xl outline-none`}
+                      />
+                      <span className="text-green-700 font-bold text-lg">/ {maxTotalMarks}</span>
                     </div>
-                  )}
-
-                  <div className="flex flex-wrap items-center justify-between bg-green-50 p-5 rounded-xl border border-green-200 shadow-sm">
-                     <div className="flex items-center gap-4">
-                        <label className="text-sm font-bold text-green-900 uppercase tracking-wide">Total Score</label>
-                        <div className="flex items-baseline gap-2">
-                          <input
-                             type="number"
-                             min={0} max={maxTotalMarks}
-                             value={form.total}
-                             disabled={assessmentMode === "criteria"}
-                             onChange={(e) => setDirectTotal(e.target.value)}
-                             className={`${assessmentMode === "direct" ? "border-green-400 bg-white shadow-inner focus:ring-2 focus:ring-green-400" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"} border-2 rounded-lg px-3 py-2 w-[100px] text-center font-bold text-2xl outline-none`}
-                          />
-                          <span className="text-green-700 font-bold text-lg">/ {maxTotalMarks}</span>
-                        </div>
-                     </div>
-
                   </div>
 
-                  {assessmentMode === "direct" && (
-                     <div className="mt-4 bg-green-50 p-5 rounded-xl border border-green-200 shadow-sm">
-                        <label className="text-sm font-bold text-green-900 uppercase tracking-wide block mb-2">Overall Justification</label>
-                        <textarea 
-                           rows="3" 
-                           placeholder="Please provide a justification for the overall direct score..." 
-                           value={form.notes || ""} 
-                           onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} 
-                           className="w-full border border-green-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-shadow resize-none bg-white"
-                        ></textarea>
-                     </div>
-                  )}
-               </div>
+                </div>
+
+                {assessmentMode === "direct" && (
+                  <div className="mt-4 bg-green-50 p-5 rounded-xl border border-green-200 shadow-sm">
+                    <label className="text-sm font-bold text-green-900 uppercase tracking-wide block mb-2">Overall Justification</label>
+                    <textarea
+                      rows="3"
+                      placeholder="Please provide a justification for the overall direct score..."
+                      value={form.notes || ""}
+                      onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                      className="w-full border border-green-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-shadow resize-none bg-white"
+                    ></textarea>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
 
         {/* Footer Navigation */}
         <div className="p-4 md:px-6 bg-white border-t border-gray-200 shrink-0 flex flex-wrap justify-between items-center rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-           <div className="flex gap-2 items-center order-2 md:order-1 mt-4 md:mt-0">
-             <button onClick={guardedPrev} disabled={currentIndex === 0} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">◀ Prev</button>
-             <div className="text-xs font-bold text-gray-400 tracking-widest px-2">{currentIndex + 1} OF {participants.length}</div>
-             <button onClick={guardedNext} disabled={currentIndex === participants.length - 1} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Next ▶</button>
-           </div>
+          <div className="flex gap-2 items-center order-2 md:order-1 mt-4 md:mt-0">
+            <button onClick={guardedPrev} disabled={currentIndex === 0} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">◀ Prev</button>
+            <div className="text-xs font-bold text-gray-400 tracking-widest px-2">{currentIndex + 1} OF {participants.length}</div>
+            <button onClick={guardedNext} disabled={currentIndex === participants.length - 1} className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Next ▶</button>
+          </div>
 
-           <div className="text-center w-full md:w-auto order-1 md:order-2 flex justify-center min-h-[30px]">
-              {savedMsg && <span className="text-green-700 font-bold text-sm bg-green-100 px-4 py-1.5 rounded-full shadow-sm animate-pulse border border-green-200">✔ Marks saved successfully</span>}
-           </div>
+          <div className="text-center w-full md:w-auto order-1 md:order-2 flex justify-center min-h-[30px]">
+            {savedMsg && <span className="text-green-700 font-bold text-sm bg-green-100 px-4 py-1.5 rounded-full shadow-sm animate-pulse border border-green-200">✔ Marks saved successfully</span>}
+          </div>
 
-           <div className="flex gap-3 justify-end order-3 w-full md:w-auto mt-4 md:mt-0">
-             <button onClick={handleMarkAbsent} className="text-sm font-bold text-red-600 border border-red-200 bg-white hover:bg-red-50 px-4 py-2 rounded-lg transition-colors">Mark Absent</button>
-             <button onClick={handleSaveMarks} className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-6 py-2 rounded-lg shadow-sm hover:shadow transition-all">Save & Continue</button>
-           </div>
+          <div className="flex gap-3 justify-end order-3 w-full md:w-auto mt-4 md:mt-0">
+            <button onClick={handleMarkAbsent} className="text-sm font-bold text-red-600 border border-red-200 bg-white hover:bg-red-50 px-4 py-2 rounded-lg transition-colors">Mark Absent</button>
+            <button onClick={handleSaveMarks} className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-6 py-2 rounded-lg shadow-sm hover:shadow transition-all">Save & Continue</button>
+          </div>
         </div>
       </div>
 
       {/* PPT Modal */}
       {showPptModal && (
-         <div className="fixed inset-0 z-[70] bg-black/90 flex flex-col p-2 md:p-6 backdrop-blur-md">
-            <div className="flex justify-between items-center mb-4 text-white px-2">
-               <div className="font-bold text-lg truncate pr-4">{p.problemStatement} - Presentation</div>
-               <button onClick={() => setShowPptModal(false)} className="bg-white/20 hover:bg-white/40 p-2 rounded-lg font-bold px-4 transition-colors text-sm flex items-center gap-2">Close ✕</button>
-            </div>
-            <div className="flex-1 w-full bg-white rounded-xl overflow-hidden shadow-2xl relative border border-gray-800">
-               <SlideViewer fileUrl={p.pptLink} onTimingUpdate={handleTimingUpdate} onAiQuery={handleAiQuery} />
-            </div>
-         </div>
+        <div className="fixed inset-0 z-[70] bg-black/90 flex flex-col p-2 md:p-6 backdrop-blur-md">
+          <div className="flex justify-between items-center mb-4 text-white px-2">
+            <div className="font-bold text-lg truncate pr-4">{p.problemStatement} - Presentation</div>
+            <button onClick={() => setShowPptModal(false)} className="bg-white/20 hover:bg-white/40 p-2 rounded-lg font-bold px-4 transition-colors text-sm flex items-center gap-2">Close ✕</button>
+          </div>
+          <div className="flex-1 w-full bg-white rounded-xl overflow-hidden shadow-2xl relative border border-gray-800">
+            <SlideViewer fileUrl={p.pptLink} onTimingUpdate={handleTimingUpdate} onAiQuery={handleAiQuery} />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -4495,10 +4481,10 @@ function AssessmentSummary({ participants, onClose, event }) {
               <th className="border px-2 py-1">Team ID</th>
               <th className="border px-2 py-1">Title</th>
               {criteriaList.map((c, i) => (
-  <th key={i} className="border px-2 py-1 text-xs">
-    {c.name}
-  </th>
-))}
+                <th key={i} className="border px-2 py-1 text-xs">
+                  {c.name}
+                </th>
+              ))}
 
               <th className="border px-2 py-1">Total</th>
             </tr>
@@ -4510,9 +4496,9 @@ function AssessmentSummary({ participants, onClose, event }) {
               const mode = assessment.mode || "criteria";
               const criteria = Array(criteriaList.length).fill(0);
               if (Array.isArray(assessment.criteria)) {
-                 assessment.criteria.forEach((val, idx) => {
-                    if (idx < criteria.length) criteria[idx] = val;
-                 });
+                assessment.criteria.forEach((val, idx) => {
+                  if (idx < criteria.length) criteria[idx] = val;
+                });
               }
 
 
@@ -4526,8 +4512,8 @@ function AssessmentSummary({ participants, onClose, event }) {
                     {p.presenterName}
                   </td>
                   <td className="border px-2 py-1">
-  {p.paperId}
-</td>
+                    {p.paperId}
+                  </td>
 
                   <td className="border px-2 py-1">
                     {p.problemStatement}
@@ -4591,7 +4577,7 @@ function SessionChairConsole() {
       .map((p) => {
         const institute = p.members?.[0]?.organisation || p.institute;
         const branch = p.members?.[0]?.specialization || p.branch;
-        
+
         let currentAssessment = null;
         if (evaluatorId && p.assessments) {
           currentAssessment = p.assessments.find(a => String(a.evaluatorId) === String(evaluatorId));
@@ -4662,7 +4648,7 @@ function SessionChairConsole() {
     };
 
     load();
-    
+
   }, []);
 
   useEffect(() => {
@@ -4682,32 +4668,32 @@ function SessionChairConsole() {
   };
 
   /* ---------------- ASSESSMENT HELPERS (UNCHANGED) ---------------- */
-const openAssessmentFromIndex = async (i) => {
-  const locked = await refreshTrackLock();
+  const openAssessmentFromIndex = async (i) => {
+    const locked = await refreshTrackLock();
 
-  if (locked) {
-    alert("Assessment is locked by admin.");
-    return;
-  }
+    if (locked) {
+      alert("Assessment is locked by admin.");
+      return;
+    }
 
-  setAssessmentIndex(i);
-  setAssessmentOpen(true);
-};
+    setAssessmentIndex(i);
+    setAssessmentOpen(true);
+  };
 
 
 
 
   const startAssessment = async () => {
-  const locked = await refreshTrackLock();
+    const locked = await refreshTrackLock();
 
-  if (locked) {
-    alert("Assessment is locked by admin.");
-    return;
-  }
+    if (locked) {
+      alert("Assessment is locked by admin.");
+      return;
+    }
 
-  setAssessmentIndex(0);
-  setAssessmentOpen(true);
-};
+    setAssessmentIndex(0);
+    setAssessmentOpen(true);
+  };
 
 
 
@@ -4721,154 +4707,154 @@ const openAssessmentFromIndex = async (i) => {
     setParticipants(arr);
   };
 
-const refreshTrackLock = async () => {
-  try {
+  const refreshTrackLock = async () => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/session/track-status?eventId=${chair.eventId}&trackId=${chair.trackId}`
+      );
+
+      if (!res.ok) {
+        console.error("Track lock fetch failed");
+        return false; // ✅ NEVER assume locked
+      }
+
+      const data = await res.json();
+
+      if (data.success) {
+        setTrack((prev) => ({
+          ...prev,
+          assessmentLocked: data.assessmentLocked,
+        }));
+        return data.assessmentLocked;
+      }
+
+      return false;
+    } catch (err) {
+      if (!err.message.includes("Failed to fetch")) {
+        console.error("Track lock fetch error:", err);
+      }
+      return false;
+    }
+  };
+
+
+
+  const persistParticipants = async ({ participantId, present, assessment }) => {
     const res = await fetch(
-      `${API_BASE}/api/session/track-status?eventId=${chair.eventId}&trackId=${chair.trackId}`
+      `${API_BASE}/api/session/participants/${participantId}/assessment`,
+      {
+        method: "PATCH", // ✅ MUST MATCH BACKEND
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ present, assessment, evaluatorId: chair?._id }),
+      }
     );
 
-    if (!res.ok) {
-      console.error("Track lock fetch failed");
-      return false; // ✅ NEVER assume locked
+    if (res.status === 403) {
+      return { locked: true };
     }
 
     const data = await res.json();
 
+    if (!res.ok || !data.success) {
+      console.error("Assessment save failed:", data);
+      return { success: false };
+    }
+
+    return { success: true, participant: data.participant };
+  };
+
+
+
+  const saveAssessmentAndProceed = async (idx, assessmentObj) => {
+    if (track.assessmentLocked) {
+      alert("Assessment is locked by admin.");
+      return;
+    }
+
+    const result = await persistParticipants({
+      participantId: participants[idx]._id, // Mongo _id ONLY
+      present: assessmentObj.present,
+      assessment: assessmentObj.assessment,
+    });
+
+
+    if (result?.locked) {
+      alert("Assessment is locked by admin.");
+      return;
+    }
+
+    if (result?.success && result.participant) {
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p._id === result.participant._id
+            ? normalizeParticipants([result.participant], chair._id)[0]   // ✅ backend is truth, but must be normalized!
+            : p
+        )
+      );
+    }
+
+  };
+
+
+  const handleFinalSubmit = async () => {
+    if (
+      !window.confirm(
+        "Final submission will lock assessment permanently. Continue?"
+      )
+    ) {
+      return;
+    }
+
+    const res = await fetch(
+      `${API_BASE}/api/admin/tracks/${chair.eventId}/${chair.trackId}/lock`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locked: true }),
+      }
+    );
+
+    const data = await res.json();
+
     if (data.success) {
+      alert("Assessment submitted and locked.");
+
+      // 🔒 HARD LOCK LOCALLY (instant UI update)
       setTrack((prev) => ({
         ...prev,
-        assessmentLocked: data.assessmentLocked,
+        assessmentLocked: true,
       }));
-      return data.assessmentLocked;
+
+      await refreshTrackLock(); // backend confirmation
+    } else {
+      alert("Failed to lock assessment");
     }
-
-    return false;
-  } catch (err) {
-    if (!err.message.includes("Failed to fetch")) {
-      console.error("Track lock fetch error:", err);
-    }
-    return false;
-  }
-};
+  };
 
 
+  const handlePrev = () => {
+    setAssessmentIndex((i) => Math.max(0, i - 1));
+  };
 
-const persistParticipants = async ({ participantId, present, assessment }) => {
-  const res = await fetch(
-    `${API_BASE}/api/session/participants/${participantId}/assessment`,
-    {
-      method: "PATCH", // ✅ MUST MATCH BACKEND
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ present, assessment, evaluatorId: chair?._id }),
-    }
-  );
-
-  if (res.status === 403) {
-    return { locked: true };
-  }
-
-  const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    console.error("Assessment save failed:", data);
-    return { success: false };
-  }
-
-  return { success: true, participant: data.participant };
-};
-
-
-
-const saveAssessmentAndProceed = async (idx, assessmentObj) => {
-  if (track.assessmentLocked) {
-    alert("Assessment is locked by admin.");
-    return;
-  }
-
-  const result = await persistParticipants({
-  participantId: participants[idx]._id, // Mongo _id ONLY
-  present: assessmentObj.present,
-  assessment: assessmentObj.assessment,
-});
-
-
-  if (result?.locked) {
-    alert("Assessment is locked by admin.");
-    return;
-  }
-
-  if (result?.success && result.participant) {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p._id === result.participant._id
-          ? normalizeParticipants([result.participant], chair._id)[0]   // ✅ backend is truth, but must be normalized!
-          : p
-      )
+  const handleNext = () => {
+    setAssessmentIndex((i) =>
+      Math.min(participants.length - 1, i + 1)
     );
-}
+  };
 
-};
+  const handleScheduleToLast = (idx) => {
+    setParticipants((prev) => {
+      const arr = [...prev];
+      const [moved] = arr.splice(idx, 1);
+      arr.push(moved);
+      return arr;
+    });
 
-
-const handleFinalSubmit = async () => {
-  if (
-    !window.confirm(
-      "Final submission will lock assessment permanently. Continue?"
-    )
-  ) {
-    return;
-  }
-
-  const res = await fetch(
-    `${API_BASE}/api/admin/tracks/${chair.eventId}/${chair.trackId}/lock`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locked: true }),
-    }
-  );
-
-  const data = await res.json();
-
-  if (data.success) {
-  alert("Assessment submitted and locked.");
-
-  // 🔒 HARD LOCK LOCALLY (instant UI update)
-  setTrack((prev) => ({
-    ...prev,
-    assessmentLocked: true,
-  }));
-
-  await refreshTrackLock(); // backend confirmation
-}else {
-    alert("Failed to lock assessment");
-  }
-};
-
-
-const handlePrev = () => {
-  setAssessmentIndex((i) => Math.max(0, i - 1));
-};
-
-const handleNext = () => {
-  setAssessmentIndex((i) =>
-    Math.min(participants.length - 1, i + 1)
-  );
-};
-
- const handleScheduleToLast = (idx) => {
-  setParticipants((prev) => {
-    const arr = [...prev];
-    const [moved] = arr.splice(idx, 1);
-    arr.push(moved);
-    return arr;
-  });
-
-  // keep index valid
-  setAssessmentIndex((i) =>
-    i >= participants.length - 1 ? participants.length - 2 : i
-  );
-};
+    // keep index valid
+    setAssessmentIndex((i) =>
+      i >= participants.length - 1 ? participants.length - 2 : i
+    );
+  };
 
 
 
@@ -4915,8 +4901,8 @@ const handleNext = () => {
       <TrackCard
         track={track || { id: "—", title: "No Track", description: "—" }}
         chairs={{
-            internal: chair || null,
-            external: null,
+          internal: chair || null,
+          external: null,
         }}
         participants={participants}
         collapsed={collapsed}
@@ -4956,20 +4942,20 @@ const handleNext = () => {
       )}
 
       <div className="mt-6 flex justify-between items-center px-6 py-4 bg-white border-t shadow-sm">
-  <button
-    onClick={() => setShowSummary(true)}
-    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium"
-  >
-    View Summary
-  </button>
-</div>
+        <button
+          onClick={() => setShowSummary(true)}
+          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium"
+        >
+          View Summary
+        </button>
+      </div>
 
-    {showSummary && (
-      <AssessmentSummary
-        participants={participants}
-        onClose={() => setShowSummary(false)}
-      />
-    )}
+      {showSummary && (
+        <AssessmentSummary
+          participants={participants}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
 
 
     </div>
@@ -4990,7 +4976,7 @@ function EditEventWrapper({ events, setEvents }) {
       editEventId={id}
       events={events}
       setEvents={setEvents}
-      onEventSaved={() => {}}
+      onEventSaved={() => { }}
     />
   );
 }
@@ -4998,54 +4984,56 @@ function EditEventWrapper({ events, setEvents }) {
 function AppRoutes({ events, setEvents, refreshEvents }) {
   const location = useLocation();
   const hideHeader =
-  location.pathname === "/login" ||
-  location.pathname.startsWith("/session") ||
-  location.pathname.startsWith("/student");
+    location.pathname === "/login" ||
+    location.pathname.startsWith("/session") ||
+    location.pathname.startsWith("/student");
 
   const [user, setUser] = useState({ name: "Admin", role: "admin" });
 
   const navigate = useNavigate();
 
   useEffect(() => {
-  const role = sessionStorage.getItem("care_role");
-  const email = sessionStorage.getItem("care_email");
-  const careName = sessionStorage.getItem("care_name");
+    const role = sessionStorage.getItem("care_role");
+    const email = sessionStorage.getItem("care_email");
+    const careName = sessionStorage.getItem("care_name");
 
-  if (role === "sessionChair") {
-    setUser({ name: careName || (email ? email.split("@")[0] : "Evaluator"), role, email });
-  } else if (role === "studentCoordinator") {
-    setUser({ name: careName || "Student Coordinator", role, email });
-  } else if (role === "teamLeader") {
-    setUser({ name: careName || "Team Leader", role, email });
-  } else {
-    setUser({ name: "Admin", role: "admin", email });
-  }
-}, [location]);
+    if (role === "sessionChair") {
+      setUser({ name: careName || (email ? email.split("@")[0] : "Evaluator"), role, email });
+    } else if (role === "studentCoordinator") {
+      setUser({ name: careName || "Student Coordinator", role, email });
+    } else if (role === "studentVolunteer") {
+      setUser({ name: careName || "Student Volunteer", role, email });
+    } else if (role === "teamLeader") {
+      setUser({ name: careName || "Team Leader", role, email });
+    } else {
+      setUser({ name: "Admin", role: "admin", email });
+    }
+  }, [location]);
 
-const handleLogout = () => {
-  sessionStorage.clear();
-  navigate("/login", { replace: true });
-};
-
-
-function ProtectedRoutes({ allowedRoles }) {
-  const role = sessionStorage.getItem("care_role");
-  const email = sessionStorage.getItem("care_email");
-
-  // Not logged in
-  if (!role || !email) {
+  const handleLogout = () => {
     sessionStorage.clear();
-    return <Navigate to="/login" replace />;
-  }
+    navigate("/login", { replace: true });
+  };
 
-  // Role not allowed
-  if (allowedRoles && !allowedRoles.includes(role)) {
-    sessionStorage.clear();
-    return <Navigate to="/login" replace />;
-  }
 
-  return <Outlet />;
-}
+  function ProtectedRoutes({ allowedRoles }) {
+    const role = sessionStorage.getItem("care_role");
+    const email = sessionStorage.getItem("care_email");
+
+    // Not logged in
+    if (!role || !email) {
+      sessionStorage.clear();
+      return <Navigate to="/login" replace />;
+    }
+
+    // Role not allowed
+    if (allowedRoles && !allowedRoles.includes(role)) {
+      sessionStorage.clear();
+      return <Navigate to="/login" replace />;
+    }
+
+    return <Outlet />;
+  }
 
 
 
@@ -5056,55 +5044,61 @@ function ProtectedRoutes({ allowedRoles }) {
       {!hideHeader && <Header user={user} onLogout={handleLogout} />}
 
       <Routes>
-  {/* ENTRY */}
-  <Route path="/" element={<Navigate to="/login" replace />} />
-  <Route path="/login" element={<Login />} />
-  <Route path="/update-password" element={<UpdatePassword />} />
+        {/* ENTRY */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
 
-  
-  {/* ADMIN */}
-  <Route element={<ProtectedRoutes allowedRoles={["admin"]} />}>
-    
-    <Route element={<AdminLayout />}>
-      <Route path="/dashboard" element={<EventsView events={events} refreshEvents={refreshEvents} />} />
-      <Route path="/progress" element={<ProgressView events={events} />} />
-      <Route path="/shortlist" element={<AdminShortlist events={events} />} />
-      <Route path="/users" element={<UsersView />} />
-      <Route path="/round2" element={<AdminRound2 />} />
-      <Route path="/problem-statements" element={<AdminProblemStatements events={events} />} />
-      <Route path="/assign-tracks" element={<AdminAssignTracks events={events} />} />
-      <Route path="/mailing" element={<AdminMailingService events={events} />} />
-      <Route path="/close-registration" element={<AdminCloseRegistration />} />
-      <Route path="/event/:id" element={<EventDetails events={events} setEvents={setEvents} />} />
-    </Route>
 
-    <Route path="/create" element={<CreateEvent onEventSaved={(ev) => setEvents((prev) => [ev, ...prev])} events={events} setEvents={setEvents} />} />
-    <Route path="/edit/:id" element={<EditEventWrapper events={events} setEvents={setEvents} />} />
-    <Route path="/admin/events/:eventId/participants" element={<AdminEventParticipants />} />
+        {/* ADMIN */}
+        <Route element={<ProtectedRoutes allowedRoles={["admin"]} />}>
 
-  </Route>
+          <Route element={<AdminLayout />}>
+            <Route path="/dashboard" element={<EventsView events={events} refreshEvents={refreshEvents} />} />
+            <Route path="/progress" element={<ProgressView events={events} />} />
+            <Route path="/shortlist" element={<AdminShortlist events={events} />} />
+            <Route path="/users" element={<UsersView />} />
+            <Route path="/round2" element={<AdminRound2 />} />
+            <Route path="/problem-statements" element={<AdminProblemStatements events={events} />} />
+            <Route path="/assign-tracks" element={<AdminAssignTracks events={events} />} />
+            <Route path="/entry-verification" element={<AdminEntryVerification />} />
+            <Route path="/mailing" element={<AdminMailingService events={events} />} />
+            <Route path="/close-registration" element={<AdminCloseRegistration />} />
+            <Route path="/event/:id" element={<EventDetails events={events} setEvents={setEvents} />} />
+          </Route>
 
-  {/* SESSION CHAIR */}
-  <Route element={<ProtectedRoutes allowedRoles={["sessionChair"]} />}>
-    <Route path="/session" element={<SessionChairConsole />} />
-  </Route>
+          <Route path="/create" element={<CreateEvent onEventSaved={(ev) => setEvents((prev) => [ev, ...prev])} events={events} setEvents={setEvents} />} />
+          <Route path="/edit/:id" element={<EditEventWrapper events={events} setEvents={setEvents} />} />
+          <Route path="/admin/events/:eventId/participants" element={<AdminEventParticipants />} />
 
-  {/* STUDENT */}
-  <Route element={<ProtectedRoutes allowedRoles={["studentCoordinator"]} />}>
-    <Route path="/student" element={<StudentDashboard />} />
-  </Route>
+        </Route>
 
-  {/* TEAM LEADER */}
-  <Route element={<ProtectedRoutes allowedRoles={["teamLeader"]} />}>
-    <Route path="/team" element={<TeamLayout />}>
-      <Route index element={<TeamHome />} />
-      <Route path="myteam" element={<TeamMyTeam />} />
-    </Route>
-  </Route>
+        {/* SESSION CHAIR */}
+        <Route element={<ProtectedRoutes allowedRoles={["sessionChair"]} />}>
+          <Route path="/session" element={<SessionChairConsole />} />
+        </Route>
 
-  {/* FALLBACK */}
-  <Route path="*" element={<Navigate to="/login" replace />} />
-</Routes>
+        {/* STUDENT */}
+        <Route element={<ProtectedRoutes allowedRoles={["studentCoordinator"]} />}>
+          <Route path="/student" element={<StudentDashboard />} />
+        </Route>
+
+        {/* VOLUNTEER */}
+        <Route element={<ProtectedRoutes allowedRoles={["studentVolunteer"]} />}>
+          <Route path="/volunteer" element={<VolunteerConsole />} />
+        </Route>
+
+        {/* TEAM LEADER */}
+        <Route element={<ProtectedRoutes allowedRoles={["teamLeader"]} />}>
+          <Route path="/team" element={<TeamLayout />}>
+            <Route index element={<TeamHome />} />
+            <Route path="myteam" element={<TeamMyTeam />} />
+          </Route>
+        </Route>
+
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
 
 
     </div>
@@ -5118,25 +5112,25 @@ export default function App() {
 
   // fetch events from backend on load
   const fetchEventsFromBackend = async () => {
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/events`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/events`);
+      const data = await res.json();
 
-    if (res.ok && data.success && Array.isArray(data.events)) {
-      setEvents(data.events);
-    } else {
-      console.error("Unexpected response shape:", data);
+      if (res.ok && data.success && Array.isArray(data.events)) {
+        setEvents(data.events);
+      } else {
+        console.error("Unexpected response shape:", data);
+        setEvents([]);
+      }
+    } catch (err) {
+      if (!err.message.includes("Failed to fetch")) {
+        console.error("Error fetching events:", err);
+      }
       setEvents([]);
+    } finally {
+      setLoadingEvents(false);
     }
-  } catch (err) {
-    if (!err.message.includes("Failed to fetch")) {
-      console.error("Error fetching events:", err);
-    }
-    setEvents([]);
-  } finally {
-    setLoadingEvents(false);
-  }
-};
+  };
   useEffect(() => {
     fetchEventsFromBackend();
   }, []);

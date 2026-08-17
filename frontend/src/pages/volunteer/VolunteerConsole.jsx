@@ -1,0 +1,634 @@
+import React, { useState, useEffect } from "react";
+import { Routes, Route, useNavigate, Navigate, useLocation, Link } from "react-router-dom";
+import { QrCode, ClipboardList, LogOut, CheckCircle, Clock, AlertTriangle, ChevronRight, X, User, Circle, Search, ArrowDownUp, Calendar, Users } from "lucide-react";
+import { Html5QrcodeScanner } from "html5-qrcode";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
+// --- SCANNER COMPONENT ---
+function VolunteerScanner({ onScanSuccess }) {
+  useEffect(() => {
+    const scanner = new Html5QrcodeScanner("reader", { 
+      qrbox: { width: 250, height: 250 }, 
+      fps: 5 
+    });
+
+    scanner.render((decodedText) => {
+      scanner.clear();
+      onScanSuccess(decodedText);
+    }, (error) => {
+      // Ignore scan errors, happens constantly when scanning
+    });
+
+    return () => {
+      scanner.clear().catch(error => console.error("Failed to clear scanner", error));
+    };
+  }, [onScanSuccess]);
+
+  return (
+    <div className="flex flex-col items-center justify-center p-4 h-full md:p-8">
+      <div className="bg-white rounded-3xl p-6 shadow-xl border border-indigo-100 w-full max-w-sm md:max-w-md mb-6 transition-all hover:shadow-2xl">
+        <h2 className="text-xl font-bold text-center text-indigo-900 mb-4 flex items-center justify-center gap-2">
+          <QrCode className="text-indigo-600" /> Scan Team QR
+        </h2>
+        <div id="reader" className="w-full overflow-hidden rounded-xl border-2 border-indigo-200"></div>
+        <p className="text-center text-sm text-indigo-500 mt-4">Point your camera at the team's QR code to begin verification.</p>
+      </div>
+    </div>
+  );
+}
+
+// --- VERIFICATION COMPONENT ---
+function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan Next Team" }) {
+  const [teamData, setTeamData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [memberVerifications, setMemberVerifications] = useState({});
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/volunteer/scan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: qrToken }) // Fixed: send 'token'
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          setTeamData(data); // Fixed: set data directly, not data.data
+          // Initialize member verification states
+          const initialVerifications = {};
+          if (data.verification && data.verification.memberVerifications) {
+            data.verification.memberVerifications.forEach(mv => {
+              initialVerifications[mv.memberEmail] = {
+                identityVerified: mv.identityVerified || false,
+                governmentIdVerified: mv.governmentIdVerified || false,
+                consentVerified: mv.consentVerified || false,
+                isPresent: mv.isPresent !== undefined ? mv.isPresent : true,
+              };
+            });
+          }
+          setMemberVerifications(initialVerifications);
+        } else {
+          setError(data.message || "Invalid QR Code or Team not found.");
+        }
+      } catch (err) {
+        setError("Error connecting to server. Please try again.");
+      }
+      setLoading(false);
+    };
+    
+    fetchTeam();
+  }, [qrToken]);
+
+  const handleToggleMember = async (email, field, checked) => {
+    // Store previous state for rollback
+    let previousState;
+    
+    setMemberVerifications(prev => {
+      previousState = prev[email];
+      const updatedMember = { ...prev[email], [field]: checked };
+      if (field === 'isPresent' && !checked) {
+        updatedMember.identityVerified = false;
+        updatedMember.governmentIdVerified = false;
+        updatedMember.consentVerified = false;
+      }
+      return { ...prev, [email]: updatedMember };
+    });
+    
+    try {
+      await fetch(`${API_BASE}/api/volunteer/verify-member`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          verificationId: teamData.verification._id, // Send verificationId
+          memberEmail: email,
+          field,
+          value: checked
+        })
+      });
+    } catch (err) {
+      console.error("Error saving member verification", err);
+      // Revert on failure
+      setMemberVerifications(prev => ({ 
+        ...prev, 
+        [email]: previousState 
+      }));
+      alert("Failed to save verification status");
+    }
+  };
+
+  const handleApproveTeam = async () => {
+    const membersList = Object.values(memberVerifications);
+    
+    let presentCount = 0;
+    let allChecked = true;
+    for (const mv of membersList) {
+      if (mv.isPresent) {
+        presentCount++;
+        if (!mv.identityVerified || !mv.governmentIdVerified || !mv.consentVerified) {
+          allChecked = false;
+        }
+      }
+    }
+
+    if (presentCount === 0) {
+      alert("At least one member must be marked Present to approve entry.");
+      return;
+    }
+    
+    if (!allChecked) {
+      alert("All Present members must be fully verified (Photo, Govt ID, Consent) to approve entry.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/volunteer/approve-team`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          verificationId: teamData.verification._id,
+          volunteerEmail: sessionStorage.getItem("care_email"),
+          volunteerName: sessionStorage.getItem("care_name")
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        alert("Team successfully CHECKED IN!");
+        onComplete();
+      } else {
+        alert(data.message || "Failed to approve team");
+      }
+    } catch (err) {
+      alert("Error approving team");
+    }
+    setSubmitting(false);
+  };
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center p-12 h-full">
+      <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+      <p className="text-indigo-600 font-medium animate-pulse">Fetching Team Details...</p>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="p-6 h-full flex flex-col items-center justify-center">
+      <div className="bg-red-50 text-red-700 p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-sm w-full">
+        <AlertTriangle className="mx-auto w-12 h-12 mb-3 text-red-500" />
+        <h3 className="text-lg font-bold mb-2">Scan Failed</h3>
+        <p className="text-sm mb-6">{error}</p>
+        <button onClick={onBack} className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition">
+          Scan Again
+        </button>
+      </div>
+    </div>
+  );
+
+  const { team, verification } = teamData;
+  const isCheckedIn = verification.status === "CHECKED_IN";
+  
+  // Verify all present members have all 3 checkboxes
+  const membersList = Object.values(memberVerifications);
+  let presentCount = 0;
+  let allPresentChecked = true;
+  for (const mv of membersList) {
+    if (mv.isPresent) {
+      presentCount++;
+      if (!mv.identityVerified || !mv.governmentIdVerified || !mv.consentVerified) {
+        allPresentChecked = false;
+      }
+    }
+  }
+  const isReadyToApprove = presentCount > 0 && allPresentChecked;
+  
+  return (
+    <div className="p-4 md:p-8 max-w-md md:max-w-4xl mx-auto w-full pb-24 md:pb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={onBack} className="p-2 bg-indigo-50 text-indigo-700 rounded-full hover:bg-indigo-100">
+          <X size={20} />
+        </button>
+        <h2 className="text-lg font-black text-slate-800">Team Verification</h2>
+        <div className="w-9"></div>
+      </div>
+      
+      {/* Team Info Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+        <div className={`p-4 text-white font-bold text-lg flex items-center justify-between ${isCheckedIn ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
+          <div className="flex items-center gap-2">
+            {isCheckedIn ? <CheckCircle size={20} /> : <User size={20} />}
+            {team.teamName}
+          </div>
+          {isCheckedIn && <span className="bg-white/20 px-2 py-1 rounded text-xs">CHECKED IN</span>}
+        </div>
+        <div className="p-4 border-b border-slate-100 bg-slate-50">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-slate-500 font-medium">Team Leader</p>
+              <p className="text-sm font-semibold text-slate-800 break-all">{team.leaderEmail}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 font-medium">Track</p>
+              <p className="text-sm font-semibold text-slate-800 truncate">{team.assignedTrack || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Verification Checklist */}
+        <div className="p-4">
+          <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <ClipboardList className="text-indigo-500" size={18} /> Physical Verification Checklist
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {verification.memberVerifications.map((member, idx) => {
+              const mv = memberVerifications[member.memberEmail] || {};
+              const isPresent = mv.isPresent;
+              const memberFullyVerified = isPresent && mv.identityVerified && mv.governmentIdVerified && mv.consentVerified;
+              
+              return (
+                <div key={idx} className={`rounded-2xl border-2 transition-all duration-300 overflow-hidden ${!isPresent ? 'border-red-500 bg-red-50 shadow-md' : memberFullyVerified ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-slate-200 bg-white shadow-sm'}`}>
+                  <div className="flex flex-col p-5">
+                    {/* Header: Photo and Info */}
+                    <div className="flex items-start gap-4 mb-4 pb-4 border-b border-slate-200/60">
+                      <div className={`w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 shadow-inner border-2 ${!isPresent ? 'border-red-400 bg-red-200 opacity-80' : memberFullyVerified ? 'border-emerald-400' : 'border-slate-200 bg-slate-200'}`}>
+                        {member.photoUrl ? (
+                          <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-full h-full p-4 text-slate-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 pt-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className={`font-black text-lg truncate ${!isPresent ? 'text-red-900 opacity-80' : memberFullyVerified ? 'text-emerald-900' : 'text-slate-900'}`}>{member.name}</p>
+                            <p className="text-sm font-medium text-slate-500 truncate mb-1.5">{member.memberEmail}</p>
+                            <span className={`inline-block px-2.5 py-0.5 font-bold text-[10px] rounded-md uppercase tracking-wider ${!isPresent ? 'bg-red-200 text-red-800' : memberFullyVerified ? 'bg-emerald-200 text-emerald-800' : 'bg-indigo-100 text-indigo-700'}`}>{member.role}</span>
+                          </div>
+                          {memberFullyVerified && <CheckCircle className="text-emerald-600 drop-shadow-sm" size={32} strokeWidth={2.5} />}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Present / Absent Segmented Control */}
+                    <div className="flex rounded-xl bg-slate-200/70 p-1.5 mb-5 shadow-inner">
+                      <button
+                        onClick={() => handleToggleMember(member.memberEmail, 'isPresent', true)}
+                        disabled={isCheckedIn || submitting}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${isPresent ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        Present
+                      </button>
+                      <button
+                        onClick={() => handleToggleMember(member.memberEmail, 'isPresent', false)}
+                        disabled={isCheckedIn || submitting}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isPresent ? 'bg-white text-red-600 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        Absent
+                      </button>
+                    </div>
+                    
+                    {/* Interactive Checklist */}
+                    {isPresent ? (
+                      <div className="space-y-3">
+                        {[
+                          { field: 'identityVerified', label: "Identity Verified (Matches Photo)" },
+                          { field: 'governmentIdVerified', label: "Government ID Physically Seen" },
+                          { field: 'consentVerified', label: "Consent Letter Submitted" }
+                        ].map(({ field, label }) => {
+                          const checked = mv[field] || false;
+                          return (
+                            <div 
+                              key={field}
+                              onClick={() => {
+                                if (!isCheckedIn && !submitting) {
+                                  handleToggleMember(member.memberEmail, field, !checked);
+                                }
+                              }}
+                              className={`flex items-center gap-3.5 p-3.5 rounded-xl cursor-pointer transition-all border-2 ${checked ? 'bg-emerald-100 border-emerald-500 shadow-sm' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100'}`}
+                            >
+                              <div className={`transition-colors flex-shrink-0 ${checked ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                {checked ? <CheckCircle size={24} strokeWidth={2.5} className="fill-emerald-100" /> : <Circle size={24} strokeWidth={2} />}
+                              </div>
+                              <span className={`text-sm font-bold ${checked ? 'text-emerald-800' : 'text-slate-700'}`}>{label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="py-6 text-center rounded-xl border-2 border-dashed border-red-300 bg-red-100/50">
+                        <User className="w-10 h-10 mx-auto text-red-400 mb-2" />
+                        <p className="text-sm font-bold text-red-600">Member marked as absent.</p>
+                        <p className="text-xs font-medium text-red-500 mt-1">No verification required.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      
+      {/* Actions */}
+      {!isCheckedIn && (
+        <button
+          onClick={handleApproveTeam}
+          disabled={submitting || !isReadyToApprove}
+          className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-black text-lg rounded-2xl shadow-lg transition flex justify-center items-center gap-2"
+        >
+          {submitting ? "Approving..." : "APPROVE ENTRY"} <ChevronRight size={20} />
+        </button>
+      )}
+      
+      {isCheckedIn && (
+        <button
+          onClick={onComplete}
+          className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg rounded-2xl shadow-lg transition"
+        >
+          {buttonText}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// --- HISTORY COMPONENT ---
+function VolunteerHistory({ onSelectToken }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState("newest"); // newest, oldest
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const email = sessionStorage.getItem("care_email");
+      if (!email) {
+        setError("Session expired. Please log in again.");
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/volunteer/history?email=${email}`);
+        const data = await res.json();
+        if (data.success) {
+          setHistory(data.history);
+        } else {
+          setError(data.message || "Failed to fetch history.");
+        }
+      } catch (err) {
+        setError("Error connecting to server.");
+      }
+      setLoading(false);
+    };
+    fetchHistory();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 h-full">
+        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-indigo-600 font-medium animate-pulse">Loading History...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 h-full flex flex-col items-center justify-center">
+        <div className="bg-red-50 text-red-700 p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-sm w-full">
+          <AlertTriangle className="mx-auto w-12 h-12 mb-3 text-red-500" />
+          <h3 className="text-lg font-bold mb-2">Error</h3>
+          <p className="text-sm mb-6">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Filter & Sort
+  const filteredAndSorted = history
+    .filter((item) => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      const teamNameMatch = item.teamId?.teamName?.toLowerCase().includes(q);
+      const trackMatch = item.teamId?.assignedTrack?.toLowerCase().includes(q);
+      return teamNameMatch || trackMatch;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.checkedInAt).getTime();
+      const dateB = new Date(b.checkedInAt).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
+  return (
+    <div className="p-4 md:p-8 max-w-md md:max-w-6xl mx-auto w-full pb-24 md:pb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-black text-slate-800">Scan History</h2>
+        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">
+          {history.length} Teams
+        </span>
+      </div>
+
+      {/* Search and Sort Controls */}
+      <div className="flex gap-2 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Search by Team or Track..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm text-sm"
+          />
+        </div>
+        <button
+          onClick={() => setSortOrder(prev => prev === "newest" ? "oldest" : "newest")}
+          className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm flex items-center justify-center text-slate-600"
+          title={`Sort: ${sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}`}
+        >
+          <ArrowDownUp size={18} />
+        </button>
+      </div>
+
+      {/* List */}
+      {filteredAndSorted.length === 0 ? (
+        <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50">
+          <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">No teams found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredAndSorted.map((item) => {
+            const date = new Date(item.checkedInAt);
+            const formattedDate = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Count verified present members
+            let verifiedCount = 0;
+            let presentCount = 0;
+            let absentCount = 0;
+            if (item.memberVerifications) {
+               item.memberVerifications.forEach(mv => {
+                 if (mv.isPresent) {
+                   presentCount++;
+                   if (mv.identityVerified && mv.governmentIdVerified && mv.consentVerified) {
+                     verifiedCount++;
+                   }
+                 } else {
+                   absentCount++;
+                 }
+               });
+            }
+
+            return (
+              <div 
+                key={item._id} 
+                onClick={() => onSelectToken(item.qrToken)}
+                className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all group"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-lg group-hover:text-indigo-600 transition-colors">
+                      {item.teamId?.teamName || "Unknown Team"}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                       <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">
+                         {item.teamId?.assignedTrack || "No Track"}
+                       </span>
+                    </div>
+                  </div>
+                  <div className="text-right flex flex-col items-end">
+                    <div className="flex items-center gap-1 text-xs font-medium text-slate-500 mb-1">
+                      <Calendar size={12} />
+                      {formattedDate}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-medium text-slate-500">
+                      <Clock size={12} />
+                      {formattedTime}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Users size={16} className="text-slate-400" />
+                    <span className="font-medium">{verifiedCount}/{presentCount} Verified</span>
+                    {absentCount > 0 && (
+                      <>
+                        <span className="text-slate-300">•</span>
+                        <span className="font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md text-xs">{absentCount} Absent</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-indigo-600 flex items-center gap-1 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity translate-x-[-10px] group-hover:translate-x-0 duration-300">
+                    Details <ChevronRight size={16} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- MAIN CONSOLE COMPONENT ---
+export default function VolunteerConsole() {
+  const [activeTab, setActiveTab] = useState("scan");
+  const [scannedToken, setScannedToken] = useState(null);
+  const [historyToken, setHistoryToken] = useState(null);
+  const navigate = useNavigate();
+
+  const renderContent = () => {
+    if (activeTab === "scan") {
+      if (scannedToken) {
+        return (
+          <VolunteerVerification 
+            qrToken={scannedToken} 
+            onBack={() => setScannedToken(null)}
+            onComplete={() => setScannedToken(null)}
+          />
+        );
+      }
+      return <VolunteerScanner onScanSuccess={(token) => setScannedToken(token)} />;
+    }
+    if (activeTab === "history") {
+      if (historyToken) {
+        return (
+          <VolunteerVerification 
+            qrToken={historyToken} 
+            onBack={() => setHistoryToken(null)}
+            onComplete={() => setHistoryToken(null)}
+            buttonText="Back to History"
+          />
+        );
+      }
+      return <VolunteerHistory onSelectToken={(token) => setHistoryToken(token)} />;
+    }
+  };
+
+  return (
+    <div className="flex-1 bg-slate-50 flex flex-col md:flex-row font-sans h-[calc(100vh-80px)] md:h-[calc(100vh-80px)] relative">
+      
+      {/* Desktop Sidebar Navigation */}
+      <div className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 shadow-sm z-20">
+        <div className="p-6 pb-2">
+          <h2 className="text-xl font-black text-indigo-900 tracking-tight">Volunteer Portal</h2>
+        </div>
+        <div className="flex-1 p-4 space-y-2 mt-4">
+          <button 
+            onClick={() => { setActiveTab("scan"); setScannedToken(null); }}
+            className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all ${activeTab === 'scan' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-medium'}`}
+          >
+            <QrCode size={20} strokeWidth={activeTab === 'scan' ? 2.5 : 2} />
+            Scan QR
+          </button>
+          <button 
+            onClick={() => setActiveTab("history")}
+            className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-medium'}`}
+          >
+            <ClipboardList size={20} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
+            History
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto pb-[80px] md:pb-0">
+        <div className="w-full h-full flex flex-col">
+          {renderContent()}
+        </div>
+      </div>
+      
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+        <button 
+          onClick={() => { setActiveTab("scan"); setScannedToken(null); }}
+          className={`flex flex-col items-center justify-center w-full py-2 ${activeTab === 'scan' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <div className={`p-1.5 rounded-xl mb-1 transition-colors ${activeTab === 'scan' ? 'bg-indigo-50' : ''}`}>
+            <QrCode size={24} strokeWidth={activeTab === 'scan' ? 2.5 : 2} />
+          </div>
+          <span className="text-[10px] font-bold">SCAN</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab("history")}
+          className={`flex flex-col items-center justify-center w-full py-2 ${activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <div className={`p-1.5 rounded-xl mb-1 transition-colors ${activeTab === 'history' ? 'bg-indigo-50' : ''}`}>
+            <ClipboardList size={24} strokeWidth={activeTab === 'history' ? 2.5 : 2} />
+          </div>
+          <span className="text-[10px] font-bold">HISTORY</span>
+        </button>
+      </div>
+    </div>
+  );
+}

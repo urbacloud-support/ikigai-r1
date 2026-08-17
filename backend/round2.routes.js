@@ -4,6 +4,7 @@ import multer from "multer";
 import cloudinary from "cloudinary";
 import { NotificationModel } from "./notification.routes.js";
 import { ProblemStatement } from "./problem-statements.routes.js";
+import { TeamVerification } from "./volunteer.routes.js";
 
 
 const router = express.Router();
@@ -433,6 +434,40 @@ router.put("/update-tshirt", async (req, res) => {
   } catch (err) {
     console.error("Error updating t-shirt size:", err);
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// Fetch Team QR code for Entry Verification
+router.get("/team-qr/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    // First find the team
+    const team = await TeamModel.findOne({ leaderEmail: email });
+    if (!team) {
+      return res.status(404).json({ success: false, message: "Team not found" });
+    }
+
+    if (!team.assignedProblemStatement) {
+      return res.json({ success: true, isEligible: false, qrToken: null });
+    }
+
+    // Then find verification record
+    const verification = await TeamVerification.findOne({ teamId: team._id }).lean();
+    if (!verification || !verification.qrToken) {
+      return res.json({ success: true, isEligible: true, qrToken: null, verificationStatus: null });
+    }
+
+    res.json({ 
+      success: true, 
+      isEligible: true, 
+      qrToken: verification.qrToken,
+      verificationStatus: verification.status 
+    });
+  } catch (error) {
+    console.error("Fetch QR Error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

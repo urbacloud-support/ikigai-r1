@@ -12,6 +12,7 @@ import notificationRoutes, { NotificationModel } from "./notification.routes.js"
 import mailingRoutes from "./mailing.routes.js";
 import { sendMail } from "./mailer.js";
 import problemStatementRoutes from "./problem-statements.routes.js";
+import volunteerRoutes, { StudentVolunteer } from "./volunteer.routes.js";
 
 
 
@@ -46,6 +47,7 @@ app.use("/api/round2", round2Routes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin/mailing", mailingRoutes);
 app.use("/api/problem-statements", problemStatementRoutes);
+app.use("/api/volunteer", volunteerRoutes);
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -383,6 +385,10 @@ const checkEmailUnique = async (email, excludeId = null, excludeRole = null) => 
   if (excludeId && excludeRole === 'studentCoordinator') studentQuery._id = { $ne: excludeId };
   if (await StudentCoordinator.findOne(studentQuery).lean()) return false;
 
+  const volunteerQuery = { email: normEmail };
+  if (excludeId && excludeRole === 'studentVolunteer') volunteerQuery._id = { $ne: excludeId };
+  if (await StudentVolunteer.findOne(volunteerQuery).lean()) return false;
+
   return true;
 };
 
@@ -610,6 +616,16 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
+    const volunteer = await StudentVolunteer.findOne({ email: normalizedEmail });
+    if (volunteer && volunteer.passwordHash === hashed) {
+      return res.json({
+        success: true,
+        role: "studentVolunteer",
+        email: normalizedEmail,
+        name: volunteer.name,
+      });
+    }
+
     const chair = await SessionChair.findOne({ email: normalizedEmail });
     if (chair && chair.passwordHash === hashed) {
       return res.json({
@@ -664,10 +680,11 @@ app.post("/api/auth/send-otp", async (req, res) => {
   }
   const chair = await SessionChair.findOne({ email }).lean();
   const student = await StudentCoordinator.findOne({ email }).lean();
+  const volunteer = await StudentVolunteer.findOne({ email }).lean();
   const teamLeader = await TeamLeader.findOne({ email }).lean();
 
 
-  if (!chair && !student && !teamLeader) {
+  if (!chair && !student && !volunteer && !teamLeader) {
     console.log("OTP failed for email:", email);
     return res.status(404).json({
       success: false,
@@ -819,6 +836,14 @@ app.post("/api/auth/verify-otp", async (req, res) => {
     });
   }
 
+  const volunteer = await StudentVolunteer.findOne({ email });
+  if (volunteer) {
+    return res.json({
+      success: true,
+      role: "studentVolunteer",
+      name: volunteer.name,
+    });
+  }
 
   const chair = await SessionChair.findOne({ email });
   if (chair) {
@@ -2810,6 +2835,13 @@ app.post("/api/auth/change-password-direct", async (req, res) => {
       await student.save();
       return res.json({ success: true, message: "Password updated successfully" });
     }
+    else if (role === "studentVolunteer") {
+      const volunteer = await StudentVolunteer.findOne({ email: normalizedEmail });
+      if (!volunteer) return res.status(404).json({ success: false, message: "User not found" });
+      volunteer.passwordHash = hashed;
+      await volunteer.save();
+      return res.json({ success: true, message: "Password updated successfully" });
+    }
     else if (role === "sessionChair") {
       const chair = await SessionChair.findOne({ email: normalizedEmail });
       if (!chair) return res.status(404).json({ success: false, message: "User not found" });
@@ -2875,47 +2907,70 @@ app.get('/api/admin/evaluators/all', async (req, res) => {
 });
 
 
-// ✅ Admin: Create Global Student Coordinator
-app.post("/api/admin/student-coordinators/global", async (req, res) => {
+// ✅ Admin: Create Global Student Coordinator or Volunteer
+app.post("/api/admin/users/global", async (req, res) => {
   try {
-    const { name, firstName, email, phone } = req.body;
-
+    const { name, firstName, email, phone, role } = req.body;
+    
     // Check if exists globally
     const isUnique = await checkEmailUnique(email);
     if (!isUnique) {
       return res.status(400).json({ success: false, message: "This email is already in use by another role in the system." });
     }
 
-    const tempPassword = (firstName || "student").toLowerCase().replace(/[^a-z0-9]/g, "") + "123";
+    const tempPassword = (firstName || "user").toLowerCase().replace(/[^a-z0-9]/g, "") + "123";
     const passwordHash = await hashPassword(tempPassword);
 
-    const newStudent = await StudentCoordinator.create({
-      name,
-      email,
-      phone,
-      passwordHash,
-      eventId: "global",
-      trackId: "global"
-    });
+    let newUser;
+    if (role === "studentVolunteer") {
+      newUser = await StudentVolunteer.create({
+        name,
+        email,
+        phone,
+        passwordHash,
+        eventId: "global"
+      });
+    } else {
+      newUser = await StudentCoordinator.create({
+        name,
+        email,
+        phone,
+        passwordHash,
+        eventId: "global",
+        trackId: "global"
+      });
+    }
 
-    res.json({ success: true, user: { ...newStudent.toObject(), tempPassword } });
+    res.json({ success: true, user: { ...newUser.toObject(), tempPassword, role: role || "studentCoordinator" } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-app.get("/api/admin/student-coordinators/global", async (req, res) => {
+app.get("/api/admin/users/global", async (req, res) => {
   try {
-    const students = await StudentCoordinator.find({ eventId: "global" });
-    res.json({ success: true, students });
+    const coordinators = await StudentCoordinator.find({ eventId: "global" }).lean();
+    const volunteers = await StudentVolunteer.find({ eventId: "global" }).lean();
+    
+    const users = [
+      ...coordinators.map(c => ({ ...c, role: 'studentCoordinator' })),
+      ...volunteers.map(v => ({ ...v, role: 'studentVolunteer' }))
+    ];
+    
+    res.json({ success: true, users });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-app.delete("/api/admin/student-coordinators/:id", async (req, res) => {
+app.delete("/api/admin/users/global/:role/:id", async (req, res) => {
   try {
-    await StudentCoordinator.findByIdAndDelete(req.params.id);
+    const { role, id } = req.params;
+    if (role === "studentVolunteer") {
+      await StudentVolunteer.findByIdAndDelete(id);
+    } else {
+      await StudentCoordinator.findByIdAndDelete(id);
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

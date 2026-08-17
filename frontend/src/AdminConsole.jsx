@@ -692,7 +692,7 @@ export function UsersView() {
   const [expandedId, setExpandedId] = useState(null);
 
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", role: "Student Coordinator", email: "", phone: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", role: "studentCoordinator", email: "", phone: "" });
 
   const fetchData = async () => {
     setLoading(true);
@@ -701,9 +701,9 @@ export function UsersView() {
       const dataEv = await resEv.json();
       if (dataEv.success) setEvaluators(dataEv.chairs || []);
 
-      const resSc = await fetch(`${API_BASE}/api/admin/student-coordinators/global`);
+      const resSc = await fetch(`${API_BASE}/api/admin/users/global`);
       const dataSc = await resSc.json();
-      if (dataSc.success) setStudents(dataSc.students || []);
+      if (dataSc.success) setStudents(dataSc.users || []);
 
       const resTl = await fetch(`${API_BASE}/api/admin/team-leaders/all`);
       const dataTl = await resTl.json();
@@ -869,20 +869,20 @@ export function UsersView() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (form.role === "Student Coordinator") {
+    if (form.role === "studentCoordinator" || form.role === "studentVolunteer") {
       const fullName = `${form.firstName} ${form.lastName}`.trim();
-      const res = await fetch(`${API_BASE}/api/admin/student-coordinators/global`, {
+      const res = await fetch(`${API_BASE}/api/admin/users/global`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: fullName, firstName: form.firstName, email: form.email, phone: form.phone })
+        body: JSON.stringify({ name: fullName, firstName: form.firstName, email: form.email, phone: form.phone, role: form.role })
       });
       const data = await res.json();
       if (data.success) {
         setShowCreate(false);
-        setForm({ firstName: "", lastName: "", role: "Student Coordinator", email: "", phone: "" });
+        setForm({ firstName: "", lastName: "", role: "studentCoordinator", email: "", phone: "" });
         fetchData();
       } else {
-        alert(data.message || "Failed to create Student Coordinator");
+        alert(data.message || "Failed to create user");
       }
     }
   };
@@ -906,9 +906,9 @@ export function UsersView() {
     }
   };
 
-  const handleDeleteStudent = async (id) => {
-    if (!confirm("Are you sure you want to delete this student coordinator?")) return;
-    const res = await fetch(`${API_BASE}/api/admin/student-coordinators/${id}`, { method: "DELETE" });
+  const handleDeleteStudent = async (id, role) => {
+    if (!confirm(`Are you sure you want to delete this ${role === 'studentVolunteer' ? 'volunteer' : 'coordinator'}?`)) return;
+    const res = await fetch(`${API_BASE}/api/admin/users/global/${role}/${id}`, { method: "DELETE" });
     if (res.ok) {
       fetchData();
     }
@@ -1010,8 +1010,9 @@ export function UsersView() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Role</label>
-              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 text-gray-700" disabled>
-                <option value="Student Coordinator">Student Coordinator</option>
+              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2 bg-white text-gray-700">
+                <option value="studentCoordinator">Student Coordinator</option>
+                <option value="studentVolunteer">Student Volunteer</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">Evaluators are created from inside an Event Track.</p>
             </div>
@@ -1046,14 +1047,14 @@ export function UsersView() {
         >
           <div className="flex items-center gap-3">
             <span className="text-sm">{isStudentsCollapsed ? '▶' : '▼'}</span>
-            <span>Student Coordinators ({students.length})</span>
+            <span>Student Staff (Coordinators & Volunteers) ({students.length})</span>
           </div>
         </div>
         {!isStudentsCollapsed && (
           loading ? (
             <div className="p-6 text-gray-500">Loading users...</div>
         ) : students.length === 0 ? (
-          <div className="p-6 text-gray-500">No student coordinators have been created yet.</div>
+          <div className="p-6 text-gray-500">No student staff have been created yet.</div>
         ) : (
           <div className="divide-y divide-gray-100">
             {students.map(sc => (
@@ -1085,7 +1086,7 @@ export function UsersView() {
                         Edit
                       </button>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteStudent(sc._id); }}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteStudent(sc._id, sc.role); }}
                         className="text-red-500 hover:text-red-700 px-2 py-1 text-sm font-medium"
                       >
                         Delete
@@ -1096,7 +1097,7 @@ export function UsersView() {
                 {expandedId === sc._id && editStudentId !== sc._id && (
                   <div className="ml-5 mt-4 p-4 bg-gray-100 rounded-lg text-sm grid grid-cols-2 gap-2">
                     <div><span className="font-semibold text-gray-700">Phone:</span> {sc.phone || 'N/A'}</div>
-                    <div><span className="font-semibold text-gray-700">Type:</span> Student Coordinator (Global)</div>
+                    <div><span className="font-semibold text-gray-700">Type:</span> {sc.role === 'studentVolunteer' ? 'Student Volunteer' : 'Student Coordinator'} (Global)</div>
                     <div className="col-span-2 mt-2 pt-2 border-t border-gray-200">
                       <span className="font-semibold text-gray-700">Temporary Password:</span> 
                       <span className="ml-2 font-mono bg-white px-2 py-1 rounded border border-gray-300">

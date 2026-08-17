@@ -22,6 +22,8 @@ import {
   IndianRupee,
   QrCode,
   Upload,
+  CheckCircle,
+  Clock
 } from "lucide-react";
 import QRCode from "react-qr-code";
 
@@ -156,6 +158,7 @@ export default function TeamHome() {
   const isReopened = submitted && reopenAccess && reopenAccess.open;
 
   const [teamInfo, setTeamInfo] = useState(null);
+  const [qrData, setQrData] = useState(null);
 
   useEffect(() => {
     const fetchRound2 = async () => {
@@ -261,6 +264,12 @@ export default function TeamHome() {
                 setSelectedPS(myData.assignedProblemStatement);
               }
             }
+          }
+
+          const qrRes = await fetch(`${API_BASE}/api/round2/team-qr/${encodeURIComponent(email)}`);
+          const qrJson = await qrRes.json();
+          if (qrJson.success && qrJson.qrToken) {
+            setQrData({ token: qrJson.qrToken, status: qrJson.verificationStatus });
           }
         }
       } catch (err) {
@@ -1302,9 +1311,43 @@ export default function TeamHome() {
                 </div>
               </div>
             )}
+            
           </div>
         </>
       )}
+
+      {/* Step 5: Team Entry Verification */}
+      {qrData && qrData.token && (
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <h2 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2">
+            <QrCode className="text-purple-600" />
+            Step 5: Team Entry Verification
+          </h2>
+          
+          <div className="bg-white border-2 border-purple-100 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
+            {qrData.status === "CHECKED_IN" ? (
+              <div className="absolute inset-0 bg-green-500/10 backdrop-blur-sm flex flex-col items-center justify-center z-10 border-4 border-green-500 rounded-2xl">
+                <CheckCircle className="text-green-600 w-24 h-24 mb-4" />
+                <h3 className="text-3xl font-black text-green-700">✓ ENTRY APPROVED</h3>
+                <p className="text-green-700 font-medium mt-2">Team check-in verified successfully.</p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                  <QRCode value={qrData.token} size={200} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800">Your Team Entry QR</h3>
+                <p className="text-gray-500 mt-2 max-w-md">Present this QR code to the student volunteers at the entry desk along with original ID proofs and consent forms.</p>
+                
+                <div className="mt-6 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2 bg-orange-50 text-orange-700 rounded-full border border-orange-200">
+                  <Clock size={16} /> Pending Verification
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

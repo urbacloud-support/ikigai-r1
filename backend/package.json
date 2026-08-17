@@ -11,9 +11,6 @@
     "dev": "node --watch server.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit"
   },
-  "engines": {
-    "node": ">=20.9.0"
-  },
   "jest": {
     "testEnvironment": "node",
     "transform": {},
@@ -36,6 +33,7 @@
     "pdf-parse": "^2.4.5",
     "sharp": "^0.35.3",
     "sib-api-v3-sdk": "^8.5.0",
+    "uuid": "^14.0.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
