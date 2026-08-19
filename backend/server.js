@@ -156,6 +156,31 @@ const StudentCoordinator = mongoose.model(
   StudentCoordinatorSchema
 );
 
+const FacultyCoordinatorSchema = new mongoose.Schema(
+  {
+    name: String,
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    phone: String,
+    passwordHash: String,
+    eventId: String,
+  },
+  { timestamps: true }
+);
+
+FacultyCoordinatorSchema.index(
+  { email: 1, eventId: 1 },
+  { unique: true }
+);
+
+const FacultyCoordinator = mongoose.model(
+  "FacultyCoordinator",
+  FacultyCoordinatorSchema
+);
+
 
 // prevent duplicate chair per event
 SessionChairSchema.index(
@@ -388,6 +413,10 @@ const checkEmailUnique = async (email, excludeId = null, excludeRole = null) => 
   const volunteerQuery = { email: normEmail };
   if (excludeId && excludeRole === 'studentVolunteer') volunteerQuery._id = { $ne: excludeId };
   if (await StudentVolunteer.findOne(volunteerQuery).lean()) return false;
+
+  const facultyQuery = { email: normEmail };
+  if (excludeId && excludeRole === 'facultyCoordinator') facultyQuery._id = { $ne: excludeId };
+  if (await FacultyCoordinator.findOne(facultyQuery).lean()) return false;
 
   return true;
 };
@@ -623,6 +652,16 @@ app.post("/api/login", async (req, res) => {
         role: "studentVolunteer",
         email: normalizedEmail,
         name: volunteer.name,
+      });
+    }
+
+    const faculty = await FacultyCoordinator.findOne({ email: normalizedEmail });
+    if (faculty && faculty.passwordHash === hashed) {
+      return res.json({
+        success: true,
+        role: "facultyCoordinator",
+        email: normalizedEmail,
+        name: faculty.name,
       });
     }
 
@@ -2849,6 +2888,13 @@ app.post("/api/auth/change-password-direct", async (req, res) => {
       await chair.save();
       return res.json({ success: true, message: "Password updated successfully" });
     }
+    else if (role === "facultyCoordinator") {
+      const faculty = await FacultyCoordinator.findOne({ email: normalizedEmail });
+      if (!faculty) return res.status(404).json({ success: false, message: "User not found" });
+      faculty.passwordHash = hashed;
+      await faculty.save();
+      return res.json({ success: true, message: "Password updated successfully" });
+    }
     else if (role === "teamLeader" || role === "team") {
       const teamLeader = await TeamLeader.findOne({ email: normalizedEmail });
       if (!teamLeader) return res.status(404).json({ success: false, message: "User not found" });
@@ -2930,6 +2976,14 @@ app.post("/api/admin/users/global", async (req, res) => {
         passwordHash,
         eventId: "global"
       });
+    } else if (role === "facultyCoordinator") {
+      newUser = await FacultyCoordinator.create({
+        name,
+        email,
+        phone,
+        passwordHash,
+        eventId: "global"
+      });
     } else {
       newUser = await StudentCoordinator.create({
         name,
@@ -2951,10 +3005,12 @@ app.get("/api/admin/users/global", async (req, res) => {
   try {
     const coordinators = await StudentCoordinator.find({ eventId: "global" }).lean();
     const volunteers = await StudentVolunteer.find({ eventId: "global" }).lean();
+    const faculties = await FacultyCoordinator.find({ eventId: "global" }).lean();
     
     const users = [
       ...coordinators.map(c => ({ ...c, role: 'studentCoordinator' })),
-      ...volunteers.map(v => ({ ...v, role: 'studentVolunteer' }))
+      ...volunteers.map(v => ({ ...v, role: 'studentVolunteer' })),
+      ...faculties.map(f => ({ ...f, role: 'facultyCoordinator' }))
     ];
     
     res.json({ success: true, users });
@@ -2968,6 +3024,8 @@ app.delete("/api/admin/users/global/:role/:id", async (req, res) => {
     const { role, id } = req.params;
     if (role === "studentVolunteer") {
       await StudentVolunteer.findByIdAndDelete(id);
+    } else if (role === "facultyCoordinator") {
+      await FacultyCoordinator.findByIdAndDelete(id);
     } else {
       await StudentCoordinator.findByIdAndDelete(id);
     }

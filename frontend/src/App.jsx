@@ -36,6 +36,7 @@ import AdminEntryVerification from "./pages/admin/AdminEntryVerification";
 import TeamLayout from "./pages/TeamLayout";
 import TeamHome from "./pages/TeamHome";
 import TeamMyTeam from "./pages/TeamMyTeam";
+import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 import ikigaiLogo from "./assets/ikigai.png";
 import { FileText, CheckCircle, Link2, User, Mail, Phone, Building2, BookOpen, GraduationCap, MapPin, X, Bell } from "lucide-react";
 
@@ -169,7 +170,7 @@ function Header({ user, onLogout }) {
     };
   }, []);
 
-  const displayRole = user.role === "sessionChair" ? "Evaluator" : user.role === "studentCoordinator" ? "Student Coordinator" : user.role === "studentVolunteer" ? "Student Volunteer" : user.role === "teamLeader" ? "Team Leader" : "Admin";
+  const displayRole = user.role === "sessionChair" ? "Evaluator" : user.role === "studentCoordinator" ? "Student Coordinator" : user.role === "studentVolunteer" ? "Student Volunteer" : user.role === "teamLeader" ? "Team Leader" : user.role === "facultyCoordinator" ? "Faculty Coordinator" : "Admin";
 
   return (
     <>
@@ -5003,6 +5004,8 @@ function AppRoutes({ events, setEvents, refreshEvents }) {
       setUser({ name: careName || "Student Coordinator", role, email });
     } else if (role === "studentVolunteer") {
       setUser({ name: careName || "Student Volunteer", role, email });
+    } else if (role === "facultyCoordinator") {
+      setUser({ name: careName || "Faculty Coordinator", role, email });
     } else if (role === "teamLeader") {
       setUser({ name: careName || "Team Leader", role, email });
     } else {
@@ -5094,6 +5097,11 @@ function AppRoutes({ events, setEvents, refreshEvents }) {
             <Route index element={<TeamHome />} />
             <Route path="myteam" element={<TeamMyTeam />} />
           </Route>
+        </Route>
+
+        {/* FACULTY COORDINATOR */}
+        <Route element={<ProtectedRoutes allowedRoles={["facultyCoordinator"]} />}>
+          <Route path="/faculty/*" element={<FacultyDashboard />} />
         </Route>
 
         {/* FALLBACK */}

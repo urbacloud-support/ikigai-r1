@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { QrCode, CheckCircle, Clock, AlertTriangle, Search, Loader2 } from "lucide-react";
+import { QrCode, CheckCircle, Clock, AlertTriangle, Search, Loader2, Download, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import ikigaiLogo from "../../assets/ikigai.png";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -10,6 +14,7 @@ export default function AdminEntryVerification() {
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [stats, setStats] = useState({ total: 0, eligible: 0, qrGenerated: 0, checkedIn: 0, pending: 0 });
+  const [filterState, setFilterState] = useState("ALL");
 
   const fetchVerificationStatus = async () => {
     try {
@@ -80,7 +85,7 @@ export default function AdminEntryVerification() {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedTeams(teams.map(t => t._id));
+      setSelectedTeams(filteredTeams.map(t => t._id));
     } else {
       setSelectedTeams([]);
     }
@@ -90,10 +95,84 @@ export default function AdminEntryVerification() {
     setSelectedTeams(prev => prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]);
   };
 
-  const filteredTeams = teams.filter(t => 
-    t.teamName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    t.leaderEmail?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTeams = teams.filter(t => {
+    const matchesSearch = t.teamName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          t.leaderEmail?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterState === "ALL" ? true :
+                          filterState === "ELIGIBLE" ? !!t.assignedProblemStatement :
+                          !t.assignedProblemStatement;
+    return matchesSearch && matchesFilter;
+  });
+
+  const handleExportPDF = () => {
+    if (filteredTeams.length === 0) {
+      alert("No data to export!");
+      return;
+    }
+    const doc = new jsPDF("p", "mm", "a4");
+    doc.setFont("helvetica", "normal");
+
+    // Header
+    doc.setFillColor(250, 245, 255);
+    doc.rect(0, 0, 210, 34, "F");
+    doc.addImage(ikigaiLogo, "PNG", 14, 8, 45, 15);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(107, 33, 168);
+    const filterTitle = filterState === "ALL" ? "All" : filterState === "ELIGIBLE" ? "Eligible" : "Not Eligible";
+    doc.text(`Entry Verification - ${filterTitle}`, 65, 18, { align: "left" });
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 32, 196, 32);
+
+    // Meta
+    doc.setFontSize(10);
+    doc.setTextColor(31, 41, 55);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 40);
+    doc.text(`Total Teams: ${filteredTeams.length}`, 14, 45);
+
+    // Table Data
+    const tableColumn = ["Team Name", "Leader Email", "Leader Phone", "Eligibility", "QR Status", "Verification"];
+    const tableRows = filteredTeams.map(t => [
+      t.teamName || "N/A",
+      t.leaderEmail || "N/A",
+      t.leaderPhone || "N/A",
+      t.assignedProblemStatement ? "Eligible" : "Pending PS",
+      t.qrToken ? "Generated" : "Not Generated",
+      !t.qrToken ? "-" : t.status === "CHECKED_IN" ? "CHECKED IN" : t.status === "IN_PROGRESS" ? "IN PROGRESS" : "PENDING"
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 55,
+      theme: "grid",
+      headStyles: { fillColor: [107, 33, 168] },
+      styles: { fontSize: 9, cellPadding: 3 },
+    });
+
+    doc.save(`Entry_Verification_${filterTitle}_${Date.now()}.pdf`);
+  };
+
+  const handleExportExcel = () => {
+    if (filteredTeams.length === 0) {
+      alert("No data to export!");
+      return;
+    }
+    const exportData = filteredTeams.map(t => ({
+      "Team Name": t.teamName || "N/A",
+      "Leader Email": t.leaderEmail || "N/A",
+      "Leader Phone": t.leaderPhone || "N/A",
+      "Eligibility": t.assignedProblemStatement ? "Eligible" : "Pending PS",
+      "QR Status": t.qrToken ? "Generated" : "Not Generated",
+      "Verification Status": !t.qrToken ? "-" : t.status === "CHECKED_IN" ? "CHECKED IN" : t.status === "IN_PROGRESS" ? "IN PROGRESS" : "PENDING"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Verification");
+    const filterTitle = filterState === "ALL" ? "All" : filterState === "ELIGIBLE" ? "Eligible" : "Not Eligible";
+    XLSX.writeFile(workbook, `Entry_Verification_${filterTitle}_${Date.now()}.xlsx`);
+  };
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 pb-32">
@@ -140,31 +219,58 @@ export default function AdminEntryVerification() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
         {/* Toolbar */}
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-50">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search by team name or email..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+          <div className="flex gap-4 w-full sm:w-auto flex-1">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Search by team name or email..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <select 
+              value={filterState} 
+              onChange={(e) => setFilterState(e.target.value)}
+              className="px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-700"
+            >
+              <option value="ALL">All Teams</option>
+              <option value="ELIGIBLE">Eligible</option>
+              <option value="NOT_ELIGIBLE">Not Eligible</option>
+            </select>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button 
-              onClick={handleSelectAllEligible}
-              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition whitespace-nowrap text-sm"
+              onClick={handleExportPDF}
+              className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 font-medium rounded-lg hover:bg-red-100 transition flex items-center gap-2 text-sm shadow-sm"
             >
-              Select All Eligible
+              <FileText size={16} /> PDF
             </button>
             <button 
-              onClick={() => generateQRs(selectedTeams)}
-              disabled={selectedTeams.length === 0 || generating}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap text-sm shadow-sm"
+              onClick={handleExportExcel}
+              className="px-4 py-2 bg-green-50 text-green-600 border border-green-200 font-medium rounded-lg hover:bg-green-100 transition flex items-center gap-2 text-sm shadow-sm"
             >
-              {generating ? <Loader2 size={16} className="animate-spin" /> : <QrCode size={16} />}
-              Generate QR ({selectedTeams.length})
+              <Download size={16} /> Excel
             </button>
+            {filterState !== "NOT_ELIGIBLE" && (
+              <>
+                <button 
+                  onClick={handleSelectAllEligible}
+                  className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition whitespace-nowrap text-sm"
+                >
+                  Select All Eligible
+                </button>
+                <button 
+                  onClick={() => generateQRs(selectedTeams)}
+                  disabled={selectedTeams.length === 0 || generating}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap text-sm shadow-sm"
+                >
+                  {generating ? <Loader2 size={16} className="animate-spin" /> : <QrCode size={16} />}
+                  Generate QR ({selectedTeams.length})
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -179,12 +285,14 @@ export default function AdminEntryVerification() {
               <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="py-3 px-4 w-12 border-b border-slate-200">
-                    <input 
-                      type="checkbox" 
-                      onChange={handleSelectAll}
-                      checked={selectedTeams.length === teams.length && teams.length > 0}
-                      className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                    />
+                    {filterState !== "NOT_ELIGIBLE" && (
+                      <input 
+                        type="checkbox" 
+                        onChange={handleSelectAll}
+                        checked={selectedTeams.length === filteredTeams.length && filteredTeams.length > 0}
+                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                    )}
                   </th>
                   <th className="py-3 px-4 font-semibold text-slate-600 text-sm border-b border-slate-200">Team Details</th>
                   <th className="py-3 px-4 font-semibold text-slate-600 text-sm border-b border-slate-200">Eligibility</th>
@@ -202,16 +310,19 @@ export default function AdminEntryVerification() {
                   filteredTeams.map(team => (
                     <tr key={team._id} className="hover:bg-slate-50 transition group">
                       <td className="py-3 px-4">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedTeams.includes(team._id)}
-                          onChange={() => toggleTeam(team._id)}
-                          className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                        />
+                        {filterState !== "NOT_ELIGIBLE" && (
+                          <input 
+                            type="checkbox" 
+                            checked={selectedTeams.includes(team._id)}
+                            onChange={() => toggleTeam(team._id)}
+                            className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                          />
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <div className="font-bold text-slate-800">{team.teamName}</div>
                         <div className="text-xs text-slate-500">{team.leaderEmail}</div>
+                        <div className="text-xs text-slate-400">{team.leaderPhone || "N/A"}</div>
                       </td>
                       <td className="py-3 px-4">
                         {team.assignedProblemStatement ? (

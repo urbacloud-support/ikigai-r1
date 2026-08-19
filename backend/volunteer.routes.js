@@ -58,6 +58,13 @@ export const TeamVerificationSchema = new mongoose.Schema(
         consentVerified: { type: Boolean, default: false },
         isPresent: { type: Boolean, default: true },
         
+        attendance: {
+          day1: { type: Boolean, default: false },
+          day2: { type: Boolean, default: false },
+          day3: { type: Boolean, default: false },
+        },
+        certificateGiven: { type: Boolean, default: false },
+        
         verifiedAt: Date,
       }
     ],
@@ -74,6 +81,7 @@ export const TeamVerificationSchema = new mongoose.Schema(
       email: String,
     },
     checkedInAt: Date,
+    registrationKitGiven: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -142,6 +150,8 @@ router.post("/admin/generate-team-qrs", async (req, res) => {
             governmentIdVerified: false,
             consentVerified: false,
             isPresent: true,
+            attendance: { day1: false, day2: false, day3: false },
+            certificateGiven: false,
           });
         });
       }
@@ -201,6 +211,7 @@ router.get("/admin/team-verification-status", async (req, res) => {
         _id: t._id,
         teamName: t.teamName,
         leaderEmail: t.leaderEmail,
+        leaderPhone: t.members && t.members.length > 0 ? (t.members[0].phone || t.members[0].mobile || t.members[0].Phone || "N/A") : "N/A",
         assignedProblemStatement: t.assignedProblemStatement,
         qrToken: v?.qrToken || null,
         status: v?.status || "PENDING",
@@ -337,25 +348,15 @@ router.post("/approve-team", async (req, res) => {
       return res.status(400).json({ success: false, message: "Team is already checked in" });
     }
 
-    // Verify all present members have all 3 checkboxes
-    let allVerified = true;
     let presentCount = 0;
     for (const m of verification.memberVerifications) {
       if (m.isPresent) {
         presentCount++;
-        if (!m.identityVerified || !m.governmentIdVerified || !m.consentVerified) {
-          allVerified = false;
-          break;
-        }
       }
     }
 
     if (presentCount === 0) {
       return res.status(400).json({ success: false, message: "At least one member must be present to check in" });
-    }
-
-    if (!allVerified) {
-      return res.status(400).json({ success: false, message: "Not all present members have completed verification" });
     }
 
     verification.status = "CHECKED_IN";
@@ -391,6 +392,241 @@ router.get("/history", async (req, res) => {
 
     res.json({ success: true, history: verifications });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get all checked-in teams for attendance and kits
+router.get("/all-checked-in-teams", async (req, res) => {
+  try {
+    const verifications = await TeamVerification.find({
+      status: "CHECKED_IN"
+    }).sort({ checkedInAt: -1 }).populate({
+      path: "teamId",
+      model: TeamModel,
+      select: "teamName assignedProblemStatement assignedTrack leaderEmail"
+    });
+
+    res.json({ success: true, teams: verifications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update team level status (e.g., registrationKitGiven)
+router.put("/update-team-status", async (req, res) => {
+  try {
+    const { verificationId, field, value } = req.body;
+    
+    if (field !== 'registrationKitGiven') {
+      return res.status(400).json({ success: false, message: "Invalid field" });
+    }
+
+    const verification = await TeamVerification.findById(verificationId);
+    if (!verification) {
+      return res.status(404).json({ success: false, message: "Verification not found" });
+    }
+
+    verification[field] = Boolean(value);
+    await verification.save();
+
+    res.json({ success: true, verification });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update member level status (e.g., attendance, certificateGiven)
+router.put("/update-member-status", async (req, res) => {
+  try {
+    const { verificationId, memberEmail, field, day, value } = req.body;
+    
+    const verification = await TeamVerification.findById(verificationId);
+    if (!verification) {
+      return res.status(404).json({ success: false, message: "Verification not found" });
+    }
+
+    const memberIndex = verification.memberVerifications.findIndex(m => m.memberEmail === memberEmail);
+    if (memberIndex === -1) {
+      return res.status(404).json({ success: false, message: "Member not found" });
+    }
+
+    if (field === 'certificateGiven') {
+      verification.memberVerifications[memberIndex].certificateGiven = Boolean(value);
+    } else if (field === 'attendance' && ['day1', 'day2', 'day3'].includes(day)) {
+      verification.memberVerifications[memberIndex].attendance[day] = Boolean(value);
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid field or day" });
+    }
+
+    await verification.save();
+    res.json({ success: true, memberVerification: verification.memberVerifications[memberIndex] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Bulk update member verifications (History Edit or Bulk Attendance)
+router.put("/bulk-update-members", async (req, res) => {
+  try {
+    const { verificationId, members } = req.body;
+    
+    const verification = await TeamVerification.findById(verificationId);
+    if (!verification) {
+      return res.status(404).json({ success: false, message: "Verification not found" });
+    }
+
+    // members should be an object mapping email to member data updates
+    // e.g. { 'email@test.com': { isPresent: true, identityVerified: true, attendance: { day1: true } } }
+    if (req.body.registrationKitGiven !== undefined) {
+      verification.registrationKitGiven = Boolean(req.body.registrationKitGiven);
+    }
+    
+    if (members) {
+      for (const email of Object.keys(members)) {
+        const memberIndex = verification.memberVerifications.findIndex(m => m.memberEmail === email);
+        if (memberIndex !== -1) {
+          const updates = members[email];
+          if (updates.isPresent !== undefined) verification.memberVerifications[memberIndex].isPresent = updates.isPresent;
+          if (updates.identityVerified !== undefined) verification.memberVerifications[memberIndex].identityVerified = updates.identityVerified;
+          if (updates.governmentIdVerified !== undefined) verification.memberVerifications[memberIndex].governmentIdVerified = updates.governmentIdVerified;
+          if (updates.consentVerified !== undefined) verification.memberVerifications[memberIndex].consentVerified = updates.consentVerified;
+          if (updates.attendance) {
+            if (updates.attendance.day1 !== undefined) verification.memberVerifications[memberIndex].attendance.day1 = updates.attendance.day1;
+            if (updates.attendance.day2 !== undefined) verification.memberVerifications[memberIndex].attendance.day2 = updates.attendance.day2;
+            if (updates.attendance.day3 !== undefined) verification.memberVerifications[memberIndex].attendance.day3 = updates.attendance.day3;
+          }
+        }
+      }
+    }
+
+    await verification.save();
+    res.json({ success: true, verification });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+/* ================== FACULTY COORDINATOR ENDPOINTS ================== */
+
+// Get highly populated teams data for Faculty Dashboard (History, Kits, Attendance)
+router.get("/faculty/teams-data", async (req, res) => {
+  try {
+    const teams = await TeamModel.find({ status: "Approved" }).lean();
+    const verifications = await TeamVerification.find().lean();
+    
+    const verifMap = {};
+    verifications.forEach(v => {
+      verifMap[v.teamId.toString()] = v;
+    });
+
+    const data = teams.map(t => {
+      const v = verifMap[t._id.toString()];
+      return {
+        _id: t._id,
+        teamName: t.teamName,
+        leaderEmail: t.leaderEmail,
+        eventId: t.eventId,
+        assignedProblemStatement: t.assignedProblemStatement,
+        status: v?.status || "PENDING",
+        checkedInAt: v?.checkedInAt || null,
+        registrationKitGiven: v?.registrationKitGiven || false,
+        memberVerifications: v?.memberVerifications || []
+      };
+    });
+
+    res.json({ success: true, teams: data });
+  } catch (error) {
+    console.error("Faculty Teams Data Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get overview stats
+router.get("/faculty/dashboard", async (req, res) => {
+  try {
+    const teams = await TeamModel.find({ status: "Approved" }).lean();
+    
+    // 1. Calculate true total members from Shortlisted
+    const pIds = teams.map(t => String(t.participantId));
+    const objectIds = teams.map(t => {
+      try { return new mongoose.Types.ObjectId(t.participantId); } catch(e) { return null; }
+    }).filter(id => id);
+
+    const shortlistedTeams = await Shortlisted.find({
+      $or: [
+        { participantId: { $in: pIds } },
+        { participantId: { $in: objectIds } }
+      ]
+    }).lean();
+
+    let totalMembers = 0;
+    shortlistedTeams.forEach(s => {
+      if (s.members && Array.isArray(s.members)) {
+        totalMembers += s.members.length;
+      }
+    });
+
+    const verifications = await TeamVerification.find().lean();
+    
+    let totalTeams = teams.length;
+    let checkedInTeams = 0;
+    let checkedInMembers = 0;
+    
+    let day1Attendance = 0;
+    let day2Attendance = 0;
+    let day3Attendance = 0;
+    
+    let missingGovId = 0;
+    let missingConsent = 0;
+    
+    let registrationKitsGiven = 0;
+    let participationCertsGiven = 0;
+
+    for (const v of verifications) {
+      // strict logic: Team must be CHECKED_IN
+      if (v.status === "CHECKED_IN") {
+        checkedInTeams++;
+        
+        if (v.registrationKitGiven) registrationKitsGiven++;
+        
+        if (v.memberVerifications && Array.isArray(v.memberVerifications)) {
+          for (const m of v.memberVerifications) {
+            // strict logic: Member must be present
+            if (m.isPresent) {
+              checkedInMembers++;
+              
+              if (m.attendance?.day1) day1Attendance++;
+              if (m.attendance?.day2) day2Attendance++;
+              if (m.attendance?.day3) day3Attendance++;
+              
+              if (!m.governmentIdVerified) missingGovId++;
+              if (!m.consentVerified) missingConsent++;
+              
+              if (m.certificateGiven) participationCertsGiven++;
+            }
+          }
+        }
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      stats: {
+        totalTeams,
+        checkedInTeams,
+        totalMembers,
+        checkedInMembers,
+        day1Attendance,
+        day2Attendance,
+        day3Attendance,
+        missingGovId,
+        missingConsent,
+        registrationKitsGiven,
+        participationCertsGiven
+      }
+    });
+  } catch (error) {
+    console.error("Faculty Dashboard Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
