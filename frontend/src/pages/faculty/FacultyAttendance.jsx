@@ -81,7 +81,7 @@ export default function FacultyAttendance({ teamsData }) {
       
       // Team Header Row
       tableRows.push([
-        { content: `[TEAM] ${team.teamName}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 250] } },
+        { content: team.teamName, styles: { fontStyle: 'bold', fillColor: [240, 240, 250] } },
         { content: `${team.memberVerifications?.length || 0} Members`, styles: { fontStyle: 'bold', fillColor: [240, 240, 250] } },
         { content: `${d1.present}/${d1.total}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 250] } },
         { content: `${d2.present}/${d2.total}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 250] } },
@@ -126,15 +126,30 @@ export default function FacultyAttendance({ teamsData }) {
     if (filteredTeams.length === 0) return alert("No data");
     const exportData = [];
     
+    // Metadata Header
+    exportData.push({ "Type": "CUSTOM ATTENDANCE REPORT", "Name": "", "Role/Members": "", "Day 1": "", "Day 2": "", "Day 3": "" });
+    exportData.push({ "Type": `Generated on: ${new Date().toLocaleDateString()}`, "Name": "", "Role/Members": "", "Day 1": "", "Day 2": "", "Day 3": "" });
+    exportData.push({ "Type": `Filters Applied -> Day 1: ${filterDay1} | Day 2: ${filterDay2} | Day 3: ${filterDay3}`, "Name": "", "Role/Members": "", "Day 1": "", "Day 2": "", "Day 3": "" });
+    exportData.push({ "Type": "", "Name": "", "Role/Members": "", "Day 1": "", "Day 2": "", "Day 3": "" }); // Empty Row
+
     let totalDay1Present = 0;
     let totalDay2Present = 0;
     let totalDay3Present = 0;
     let totalMembers = 0;
 
-    filteredTeams.forEach(team => {
+    filteredTeams.forEach((team, idx) => {
+      if (idx > 0) {
+        exportData.push({ "Type": "", "Name": "", "Role/Members": "", "Day 1": "", "Day 2": "", "Day 3": "" }); // Spacer
+      }
+
       const d1 = getTeamAttendanceSummary(team, "day1");
       const d2 = getTeamAttendanceSummary(team, "day2");
       const d3 = getTeamAttendanceSummary(team, "day3");
+
+      totalDay1Present += d1.present;
+      totalDay2Present += d2.present;
+      totalDay3Present += d3.present;
+      totalMembers += d1.total;
 
       exportData.push({
         "Type": "TEAM",
@@ -149,7 +164,7 @@ export default function FacultyAttendance({ teamsData }) {
         team.memberVerifications.forEach(m => {
           exportData.push({
             "Type": "Member",
-            "Name": m.name,
+            "Name": `   ${m.name}`,
             "Role/Members": m.role || "Member",
             "Day 1": m.attendance?.day1 ? "Present" : "Absent",
             "Day 2": m.attendance?.day2 ? "Present" : "Absent",
@@ -158,6 +173,8 @@ export default function FacultyAttendance({ teamsData }) {
         });
       }
     });
+
+    exportData.push({ "Type": "", "Name": "", "Role/Members": "", "Day 1": "", "Day 2": "", "Day 3": "" }); // Spacer
 
     exportData.push({
       "Type": "TOTAL",
@@ -169,6 +186,16 @@ export default function FacultyAttendance({ teamsData }) {
     });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    worksheet["!cols"] = [
+      { wch: 15 }, // Type
+      { wch: 35 }, // Name
+      { wch: 20 }, // Role/Members
+      { wch: 12 }, // Day 1
+      { wch: 12 }, // Day 2
+      { wch: 12 }  // Day 3
+    ];
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
     XLSX.writeFile(workbook, `Custom_Attendance_${Date.now()}.xlsx`);
@@ -200,7 +227,7 @@ export default function FacultyAttendance({ teamsData }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
         {/* Filter Row */}
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col xl:flex-row gap-4">
           <div className="relative flex-1">
@@ -248,9 +275,11 @@ export default function FacultyAttendance({ teamsData }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm font-semibold">
+        <div className="w-full flex-1 overflow-hidden flex flex-col">
+          {/* Desktop Table */}
+          <div className="hidden md:block flex-1 overflow-auto">
+            <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b border-slate-200 text-slate-600 text-sm font-semibold">
               <tr>
                 <th className="py-3 px-4 w-1/3">Team Name</th>
                 <th className="py-3 px-4 text-center">Day 1</th>
@@ -369,7 +398,111 @@ export default function FacultyAttendance({ teamsData }) {
                 </tr>
               </tfoot>
             )}
-          </table>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden flex-1 overflow-auto flex flex-col divide-y divide-slate-100">
+            {filteredTeams.map(team => {
+              const d1 = getTeamAttendanceSummary(team, "day1");
+              const d2 = getTeamAttendanceSummary(team, "day2");
+              const d3 = getTeamAttendanceSummary(team, "day3");
+              const isExpanded = expandedTeamId === team._id;
+
+              return (
+                <div key={team._id} className="flex flex-col">
+                  <div 
+                    className={`p-4 flex flex-col gap-3 cursor-pointer hover:bg-slate-50 transition ${isExpanded ? 'bg-indigo-50/30' : ''}`}
+                    onClick={() => setExpandedTeamId(isExpanded ? null : team._id)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-bold text-slate-800 text-lg">{team.teamName}</h3>
+                      <div className="text-slate-400">
+                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <div className="flex gap-2">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Day 1</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${d1.status === 'Fully Present' ? 'bg-emerald-100 text-emerald-700' : d1.status === 'Partially Present' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{d1.present}/{d1.total}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Day 2</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${d2.status === 'Fully Present' ? 'bg-emerald-100 text-emerald-700' : d2.status === 'Partially Present' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{d2.present}/{d2.total}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Day 3</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${d3.status === 'Fully Present' ? 'bg-emerald-100 text-emerald-700' : d3.status === 'Partially Present' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{d3.present}/{d3.total}</span>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-slate-500">{team.memberVerifications?.length || 0} Members</span>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="p-4 bg-slate-50 border-t border-slate-100">
+                      {team.memberVerifications?.length > 0 ? (
+                        <div className="flex flex-col gap-4">
+                          {team.memberVerifications.map((m, i) => (
+                            <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
+                              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                <span className="font-bold text-slate-700">{m.name}</span>
+                                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{m.role || 'Member'}</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 text-center">
+                                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-lg p-2 border border-slate-100">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Day 1</span>
+                                  <StatusIcon status={m.attendance?.day1} />
+                                </div>
+                                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-lg p-2 border border-slate-100">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Day 2</span>
+                                  <StatusIcon status={m.attendance?.day2} />
+                                </div>
+                                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-lg p-2 border border-slate-100">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Day 3</span>
+                                  <StatusIcon status={m.attendance?.day3} />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No members found.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            
+            {filteredTeams.length === 0 && (
+              <div className="p-8 text-center text-slate-500">
+                <div className="text-lg font-bold text-slate-600 mb-1">No matches found</div>
+                <p className="text-sm">Try adjusting your search or filters.</p>
+              </div>
+            )}
+            
+            {filteredTeams.length > 0 && (
+              <div className="p-4 bg-indigo-50 border-t border-indigo-100 flex flex-col gap-3">
+                <div className="text-sm font-bold text-indigo-900 uppercase tracking-wider text-center">Grand Total</div>
+                <div className="flex justify-between items-center gap-2">
+                  <div className="flex flex-col items-center flex-1 bg-white p-2 rounded-lg border border-indigo-100 shadow-sm">
+                    <span className="text-[10px] uppercase font-bold text-indigo-400 mb-1">Day 1</span>
+                    <span className="text-sm font-bold text-indigo-700">{totalDay1Present}/{totalMembers}</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1 bg-white p-2 rounded-lg border border-indigo-100 shadow-sm">
+                    <span className="text-[10px] uppercase font-bold text-indigo-400 mb-1">Day 2</span>
+                    <span className="text-sm font-bold text-indigo-700">{totalDay2Present}/{totalMembers}</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1 bg-white p-2 rounded-lg border border-indigo-100 shadow-sm">
+                    <span className="text-[10px] uppercase font-bold text-indigo-400 mb-1">Day 3</span>
+                    <span className="text-sm font-bold text-indigo-700">{totalDay3Present}/{totalMembers}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, Navigate, useLocation, Link } from "react-router-dom";
-import { QrCode, ClipboardList, LogOut, CheckCircle, Clock, AlertTriangle, ChevronRight, X, User, Circle, Search, ArrowDownUp, Calendar, Users } from "lucide-react";
+import { QrCode, ClipboardList, LogOut, CheckCircle, Clock, AlertTriangle, ChevronRight, X, User, Circle, Search, ArrowDownUp, Calendar, Users, Award, ListChecks, Package, FileText, Check } from "lucide-react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
@@ -8,9 +8,9 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 // --- SCANNER COMPONENT ---
 function VolunteerScanner({ onScanSuccess }) {
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("reader", { 
-      qrbox: { width: 250, height: 250 }, 
-      fps: 5 
+    const scanner = new Html5QrcodeScanner("reader", {
+      qrbox: { width: 250, height: 250 },
+      fps: 5
     });
 
     scanner.render((decodedText) => {
@@ -55,7 +55,7 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
           body: JSON.stringify({ token: qrToken }) // Fixed: send 'token'
         });
         const data = await res.json();
-        
+
         if (data.success) {
           setTeamData(data); // Fixed: set data directly, not data.data
           // Initialize member verification states
@@ -79,14 +79,37 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
       }
       setLoading(false);
     };
-    
+
     fetchTeam();
   }, [qrToken]);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const handleSaveChanges = async () => {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/volunteer/bulk-update-members`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          verificationId: teamData.verification._id,
+          members: memberVerifications
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsEditing(false);
+        alert("Changes saved successfully!");
+      } else {
+        alert("Failed to save changes.");
+      }
+    } catch (err) {
+      alert("Error saving changes.");
+    }
+    setSubmitting(false);
+  };
+
   const handleToggleMember = async (email, field, checked) => {
-    // Store previous state for rollback
     let previousState;
-    
     setMemberVerifications(prev => {
       previousState = prev[email];
       const updatedMember = { ...prev[email], [field]: checked };
@@ -97,50 +120,39 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
       }
       return { ...prev, [email]: updatedMember };
     });
-    
-    try {
-      await fetch(`${API_BASE}/api/volunteer/verify-member`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          verificationId: teamData.verification._id, // Send verificationId
-          memberEmail: email,
-          field,
-          value: checked
-        })
-      });
-    } catch (err) {
-      console.error("Error saving member verification", err);
-      // Revert on failure
-      setMemberVerifications(prev => ({ 
-        ...prev, 
-        [email]: previousState 
-      }));
-      alert("Failed to save verification status");
+
+    // Only call individual API if we are checking in for the first time
+    if (!isCheckedIn) {
+      try {
+        await fetch(`${API_BASE}/api/volunteer/verify-member`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            verificationId: teamData.verification._id,
+            memberEmail: email,
+            field,
+            value: checked
+          })
+        });
+      } catch (err) {
+        setMemberVerifications(prev => ({ ...prev, [email]: previousState }));
+        alert("Failed to save verification status");
+      }
     }
   };
 
   const handleApproveTeam = async () => {
     const membersList = Object.values(memberVerifications);
-    
+
     let presentCount = 0;
-    let allChecked = true;
     for (const mv of membersList) {
       if (mv.isPresent) {
         presentCount++;
-        if (!mv.identityVerified || !mv.governmentIdVerified || !mv.consentVerified) {
-          allChecked = false;
-        }
       }
     }
 
     if (presentCount === 0) {
       alert("At least one member must be marked Present to approve entry.");
-      return;
-    }
-    
-    if (!allChecked) {
-      alert("All Present members must be fully verified (Photo, Govt ID, Consent) to approve entry.");
       return;
     }
 
@@ -149,14 +161,14 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
       const res = await fetch(`${API_BASE}/api/volunteer/approve-team`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           verificationId: teamData.verification._id,
           volunteerEmail: sessionStorage.getItem("care_email"),
           volunteerName: sessionStorage.getItem("care_name")
         })
       });
       const data = await res.json();
-      
+
       if (data.success) {
         alert("Team successfully CHECKED IN!");
         onComplete();
@@ -175,7 +187,7 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
       <p className="text-indigo-600 font-medium animate-pulse">Fetching Team Details...</p>
     </div>
   );
-  
+
   if (error) return (
     <div className="p-6 h-full flex flex-col items-center justify-center">
       <div className="bg-red-50 text-red-700 p-6 rounded-2xl shadow-sm border border-red-200 text-center max-w-sm w-full">
@@ -191,21 +203,16 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
 
   const { team, verification } = teamData;
   const isCheckedIn = verification.status === "CHECKED_IN";
-  
-  // Verify all present members have all 3 checkboxes
+
   const membersList = Object.values(memberVerifications);
   let presentCount = 0;
-  let allPresentChecked = true;
   for (const mv of membersList) {
     if (mv.isPresent) {
       presentCount++;
-      if (!mv.identityVerified || !mv.governmentIdVerified || !mv.consentVerified) {
-        allPresentChecked = false;
-      }
     }
   }
-  const isReadyToApprove = presentCount > 0 && allPresentChecked;
-  
+  const isReadyToApprove = presentCount > 0;
+
   return (
     <div className="p-4 md:p-8 max-w-md md:max-w-4xl mx-auto w-full pb-24 md:pb-8">
       {/* Header */}
@@ -216,7 +223,7 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
         <h2 className="text-lg font-black text-slate-800">Team Verification</h2>
         <div className="w-9"></div>
       </div>
-      
+
       {/* Team Info Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
         <div className={`p-4 text-white font-bold text-lg flex items-center justify-between ${isCheckedIn ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
@@ -238,19 +245,19 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
             </div>
           </div>
         </div>
-        
+
         {/* Verification Checklist */}
         <div className="p-4">
           <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
             <ClipboardList className="text-indigo-500" size={18} /> Physical Verification Checklist
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {verification.memberVerifications.map((member, idx) => {
               const mv = memberVerifications[member.memberEmail] || {};
               const isPresent = mv.isPresent;
               const memberFullyVerified = isPresent && mv.identityVerified && mv.governmentIdVerified && mv.consentVerified;
-              
+
               return (
                 <div key={idx} className={`rounded-2xl border-2 transition-all duration-300 overflow-hidden ${!isPresent ? 'border-red-500 bg-red-50 shadow-md' : memberFullyVerified ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-slate-200 bg-white shadow-sm'}`}>
                   <div className="flex flex-col p-5">
@@ -275,24 +282,23 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
                       </div>
                     </div>
 
-                    {/* Present / Absent Segmented Control */}
                     <div className="flex rounded-xl bg-slate-200/70 p-1.5 mb-5 shadow-inner">
                       <button
                         onClick={() => handleToggleMember(member.memberEmail, 'isPresent', true)}
-                        disabled={isCheckedIn || submitting}
+                        disabled={submitting || (isCheckedIn && !isEditing)}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${isPresent ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700'}`}
                       >
                         Present
                       </button>
                       <button
                         onClick={() => handleToggleMember(member.memberEmail, 'isPresent', false)}
-                        disabled={isCheckedIn || submitting}
+                        disabled={submitting || (isCheckedIn && !isEditing)}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isPresent ? 'bg-white text-red-600 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700'}`}
                       >
                         Absent
                       </button>
                     </div>
-                    
+
                     {/* Interactive Checklist */}
                     {isPresent ? (
                       <div className="space-y-3">
@@ -303,10 +309,10 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
                         ].map(({ field, label }) => {
                           const checked = mv[field] || false;
                           return (
-                            <div 
+                            <div
                               key={field}
                               onClick={() => {
-                                if (!isCheckedIn && !submitting) {
+                                if (!submitting) {
                                   handleToggleMember(member.memberEmail, field, !checked);
                                 }
                               }}
@@ -334,7 +340,7 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
           </div>
         </div>
       </div>
-      
+
       {/* Actions */}
       {!isCheckedIn && (
         <button
@@ -345,14 +351,27 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
           {submitting ? "Approving..." : "APPROVE ENTRY"} <ChevronRight size={20} />
         </button>
       )}
-      
-      {isCheckedIn && (
-        <button
-          onClick={onComplete}
-          className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg rounded-2xl shadow-lg transition"
-        >
-          {buttonText}
-        </button>
+
+      {isCheckedIn && !isEditing && (
+        <div className="flex flex-col gap-3">
+          <button onClick={() => setIsEditing(true)} className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-lg rounded-2xl shadow-lg transition">
+            Edit Verification
+          </button>
+          <button onClick={onComplete} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg rounded-2xl shadow-lg transition">
+            {buttonText}
+          </button>
+        </div>
+      )}
+
+      {isCheckedIn && isEditing && (
+        <div className="flex flex-col gap-3">
+          <button onClick={handleSaveChanges} disabled={submitting} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg rounded-2xl shadow-lg transition">
+            {submitting ? 'Saving...' : 'Save Changes'}
+          </button>
+          <button onClick={() => setIsEditing(false)} disabled={submitting} className="w-full py-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-lg rounded-2xl shadow-lg transition">
+            Cancel
+          </button>
+        </div>
       )}
     </div>
   );
@@ -469,27 +488,27 @@ function VolunteerHistory({ onSelectToken }) {
             const date = new Date(item.checkedInAt);
             const formattedDate = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
             const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
+
             // Count verified present members
             let verifiedCount = 0;
             let presentCount = 0;
             let absentCount = 0;
             if (item.memberVerifications) {
-               item.memberVerifications.forEach(mv => {
-                 if (mv.isPresent) {
-                   presentCount++;
-                   if (mv.identityVerified && mv.governmentIdVerified && mv.consentVerified) {
-                     verifiedCount++;
-                   }
-                 } else {
-                   absentCount++;
-                 }
-               });
+              item.memberVerifications.forEach(mv => {
+                if (mv.isPresent) {
+                  presentCount++;
+                  if (mv.identityVerified && mv.governmentIdVerified && mv.consentVerified) {
+                    verifiedCount++;
+                  }
+                } else {
+                  absentCount++;
+                }
+              });
             }
 
             return (
-              <div 
-                key={item._id} 
+              <div
+                key={item._id}
                 onClick={() => onSelectToken(item.qrToken)}
                 className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all group"
               >
@@ -499,9 +518,9 @@ function VolunteerHistory({ onSelectToken }) {
                       {item.teamId?.teamName || "Unknown Team"}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
-                       <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">
-                         {item.teamId?.assignedTrack || "No Track"}
-                       </span>
+                      <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">
+                        {item.teamId?.assignedTrack || "No Track"}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right flex flex-col items-end">
@@ -515,7 +534,7 @@ function VolunteerHistory({ onSelectToken }) {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <Users size={16} className="text-slate-400" />
@@ -540,6 +559,445 @@ function VolunteerHistory({ onSelectToken }) {
   );
 }
 
+// --- ATTENDANCE COMPONENT ---
+function VolunteerAttendance() {
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedTeam, setExpandedTeam] = useState(null);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => { fetchTeams(); }, []);
+
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/volunteer/all-checked-in-teams`);
+      const data = await res.json();
+      if (data.success) { setTeams(data.teams); } else { setError("Failed to fetch teams."); }
+    } catch (err) { setError("Error connecting."); }
+    setLoading(false);
+  };
+
+  const handleCancelAttendance = () => {
+    setEditingTeam(null);
+    fetchTeams();
+  };
+
+  const handleToggleAttendance = (teamId, memberEmail, day, value) => {
+    setTeams(prev => prev.map(t => {
+      if (t._id === teamId) {
+        const newMv = t.memberVerifications.map(m => m.memberEmail === memberEmail ? { ...m, attendance: { ...m.attendance, [day]: value } } : m);
+        return { ...t, memberVerifications: newMv, isEdited: true };
+      }
+      return t;
+    }));
+  };
+
+  const handleToggleAllDay = (teamId, day, value) => {
+    setTeams(prev => prev.map(t => {
+      if (t._id === teamId) {
+        const newMv = t.memberVerifications.map(m => m.isPresent ? { ...m, attendance: { ...m.attendance, [day]: value } } : m);
+        return { ...t, memberVerifications: newMv, isEdited: true };
+      }
+      return t;
+    }));
+  };
+
+  const handleSaveAttendance = async (teamId) => {
+    setSubmitting(true);
+    const team = teams.find(t => t._id === teamId);
+    const membersMap = {};
+    team.memberVerifications.forEach(m => { membersMap[m.memberEmail] = m; });
+    try {
+      const res = await fetch(`${API_BASE}/api/volunteer/bulk-update-members`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationId: teamId, members: membersMap })
+      });
+      if (res.ok) {
+        setTeams(prev => prev.map(t => t._id === teamId ? { ...t, isEdited: false } : t));
+        setEditingTeam(null);
+        alert("Attendance saved!");
+      }
+    } catch (err) { alert("Failed to save."); }
+    setSubmitting(false);
+  };
+
+  if (loading) return <div className="p-12 text-center text-indigo-600 font-bold">Loading...</div>;
+  if (error) return <div className="p-12 text-center text-red-600 font-bold">{error}</div>;
+
+  const filteredTeams = teams.filter(t => t.teamId?.teamName?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  return (
+    <div className="p-4 md:p-8 max-w-md md:max-w-6xl mx-auto w-full pb-24 md:pb-8">
+      <h2 className="text-2xl font-black text-slate-800 mb-6">Attendance Tracker</h2>
+      <div className="mb-6 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        <input type="text" placeholder="Search Teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div className="space-y-4">
+        {filteredTeams.map(item => (
+          <div key={item._id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-colors ${item.isEdited ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200'}`}>
+            <div 
+              onClick={() => {
+                setExpandedTeam(expandedTeam === item._id ? null : item._id);
+                if (expandedTeam !== item._id) setEditingTeam(null);
+              }} 
+              className="p-4 bg-slate-50 cursor-pointer flex justify-between items-center hover:bg-slate-100 transition"
+            >
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">{item.teamId?.teamName || "Unknown Team"}</h3>
+                <p className="text-xs text-slate-500">{item.teamId?.assignedTrack || "No Track"}</p>
+              </div>
+              <ChevronRight size={20} className={`text-slate-400 transition-transform ${expandedTeam === item._id ? 'rotate-90' : ''}`} />
+            </div>
+            {expandedTeam === item._id && (
+              <div className="p-4">
+                {editingTeam === item._id && (
+                  <div className="flex gap-2 mb-4 p-3 bg-indigo-50 rounded-xl border border-indigo-100 items-center justify-between flex-wrap">
+                    <span className="text-sm font-bold text-indigo-900 flex items-center gap-2"><CheckCircle size={16} /> Quick Actions</span>
+                    <div className="flex gap-2">
+                      {['day1', 'day2', 'day3'].map(day => {
+                        const presentMembers = item.memberVerifications.filter(m => m.isPresent);
+                        const isAllDayPresent = presentMembers.length > 0 && presentMembers.every(m => m.attendance?.[day]);
+                        const shortLabels = { day1: 'Day 1 (Aug 21)', day2: 'Day 2 (Aug 22)', day3: 'Day 3 (Aug 23)' };
+                        return (
+                          <button
+                            key={`markall-${day}`}
+                            onClick={() => handleToggleAllDay(item._id, day, !isAllDayPresent)}
+                            disabled={submitting}
+                            className={`px-3 py-1.5 text-xs font-bold rounded shadow-sm transition-all border ${isAllDayPresent ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
+                          >
+                            All {shortLabels[day]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <div className="divide-y divide-slate-100">
+                  {item.memberVerifications.map((member, idx) => {
+                    if (!member.isPresent) return null;
+                    return (
+                      <div key={idx} className="py-4">
+                        <p className="font-bold text-slate-800 flex items-center gap-2">
+                          <User className="text-slate-400" size={16} />
+                          {member.name}
+                          <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ml-1 ${member.role === 'Team Leader' || member.role === 'Leader' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {member.role || 'Member'}
+                          </span>
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          {['day1', 'day2', 'day3'].map(day => {
+                            const isPresent = member.attendance?.[day] || false;
+                            const labels = { day1: 'Day 1 (Aug 21)', day2: 'Day 2 (Aug 22)', day3: 'Day 3 (Aug 23)' };
+                            
+                            if (editingTeam === item._id) {
+                              return (
+                                <button key={day} disabled={submitting} onClick={() => handleToggleAttendance(item._id, member.memberEmail, day, !isPresent)} className={`flex-1 py-2 rounded-lg text-sm font-bold border-2 transition-all ${isPresent ? 'bg-emerald-100 border-emerald-500 text-emerald-800' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                                  {labels[day]}
+                                </button>
+                              );
+                            } else {
+                              return (
+                                <div key={day} className={`flex-1 py-2 rounded-lg text-sm font-bold border-2 text-center flex items-center justify-center ${isPresent ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                                  {labels[day]}
+                                </div>
+                              );
+                            }
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-3">
+                  {editingTeam === item._id ? (
+                    <>
+                      <button onClick={() => handleSaveAttendance(item._id)} disabled={submitting || !item.isEdited} className="w-full py-4 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-black text-lg rounded-2xl shadow-md transition">
+                        {submitting ? 'Saving...' : 'Save Attendance'}
+                      </button>
+                      <button onClick={handleCancelAttendance} disabled={submitting} className="w-full py-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-lg rounded-2xl shadow-md transition">
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={() => setEditingTeam(item._id)} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg rounded-2xl shadow-md transition">
+                      Edit Attendance
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- KITS & CERTIFICATES COMPONENT ---
+function VolunteerKitsCertificates() {
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedTeam, setExpandedTeam] = useState(null);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => { fetchTeams(); }, []);
+
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/volunteer/all-checked-in-teams`);
+      const data = await res.json();
+      if (data.success) { setTeams(data.teams); } else { setError("Failed to fetch teams."); }
+    } catch (err) { setError("Error connecting."); }
+    setLoading(false);
+  };
+
+  const handleToggleKit = (verificationId, memberEmail, value) => {
+    setTeams(prev => prev.map(t => {
+      if (t._id === verificationId) {
+        const newMv = t.memberVerifications.map(m => m.memberEmail === memberEmail ? { ...m, registrationKitGiven: value } : m);
+        return { ...t, memberVerifications: newMv, isEdited: true };
+      }
+      return t;
+    }));
+  };
+
+  const handleToggleCertificate = (verificationId, memberEmail, value) => {
+    setTeams(prev => prev.map(t => {
+      if (t._id === verificationId) {
+        const newMv = t.memberVerifications.map(m => m.memberEmail === memberEmail ? { ...m, certificateGiven: value } : m);
+        return { ...t, memberVerifications: newMv, isEdited: true };
+      }
+      return t;
+    }));
+  };
+
+  const handleToggleAllKits = (teamId, value) => {
+    setTeams(prev => prev.map(t => {
+      if (t._id === teamId) {
+        const newMv = t.memberVerifications.map(m => m.isPresent ? { ...m, registrationKitGiven: value } : m);
+        return { ...t, memberVerifications: newMv, isEdited: true };
+      }
+      return t;
+    }));
+  };
+
+  const handleToggleAllCerts = (teamId, value) => {
+    setTeams(prev => prev.map(t => {
+      if (t._id === teamId) {
+        const newMv = t.memberVerifications.map(m => m.isPresent ? { ...m, certificateGiven: value } : m);
+        return { ...t, memberVerifications: newMv, isEdited: true };
+      }
+      return t;
+    }));
+  };
+
+  const handleSaveKitsCerts = async (teamId) => {
+    setSubmitting(true);
+    const team = teams.find(t => t._id === teamId);
+    const membersMap = {};
+    team.memberVerifications.forEach(m => { membersMap[m.memberEmail] = m; });
+    try {
+      const res = await fetch(`${API_BASE}/api/volunteer/bulk-update-members`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          verificationId: teamId,
+          members: membersMap
+        })
+      });
+      if (res.ok) {
+        setTeams(prev => prev.map(t => t._id === teamId ? { ...t, isEdited: false } : t));
+        setEditingTeam(null);
+        alert("Kits and Certificates saved!");
+      }
+    } catch (err) { alert("Failed to save."); }
+    setSubmitting(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTeam(null);
+    fetchTeams();
+  };
+
+  if (loading) return <div className="p-12 text-center text-indigo-600 font-bold">Loading...</div>;
+  if (error) return <div className="p-12 text-center text-red-600 font-bold">{error}</div>;
+
+  const filteredTeams = teams.filter(t => t.teamId?.teamName?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  return (
+    <div className="p-4 md:p-8 max-w-md md:max-w-6xl mx-auto w-full pb-24 md:pb-8">
+      <h2 className="text-2xl font-black text-slate-800 mb-6">Kits & Certificates</h2>
+      <div className="mb-6 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        <input type="text" placeholder="Search Teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+      </div>
+      <div className="space-y-4">
+        {filteredTeams.map(item => {
+          let certGivenCount = 0;
+          let kitGivenCount = 0;
+          let totalPresentCount = 0;
+          if (item.memberVerifications) {
+            item.memberVerifications.forEach(m => {
+              if (m.isPresent) {
+                totalPresentCount++;
+                if (m.certificateGiven) certGivenCount++;
+                if (m.registrationKitGiven) kitGivenCount++;
+              }
+            });
+          }
+
+          return (
+            <div key={item._id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-colors ${item.isEdited ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200'}`}>
+              <div
+                onClick={() => {
+                  setExpandedTeam(expandedTeam === item._id ? null : item._id);
+                  if (expandedTeam !== item._id) setEditingTeam(null);
+                }}
+                className="p-4 bg-slate-50 cursor-pointer flex justify-between items-center hover:bg-slate-100 transition"
+              >
+                <div>
+                  <h3 className="font-bold text-slate-800 text-lg">{item.teamId?.teamName || "Unknown Team"}</h3>
+                  <div className="flex gap-2 mt-2">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${kitGivenCount === totalPresentCount && totalPresentCount > 0 ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : kitGivenCount > 0 ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                      KITS: {kitGivenCount}/{totalPresentCount}
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${certGivenCount === totalPresentCount && totalPresentCount > 0 ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : certGivenCount > 0 ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                      CERTS: {certGivenCount}/{totalPresentCount}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={20} className={`text-slate-400 transition-transform ${expandedTeam === item._id ? 'rotate-90' : ''}`} />
+              </div>
+              {expandedTeam === item._id && (
+                <div className="p-5">
+                  {/* Quick Actions */}
+                  {editingTeam === item._id && (
+                    <div className="flex gap-2 mb-4 p-3 bg-indigo-50 rounded-xl border border-indigo-100 items-center justify-between flex-wrap">
+                      <span className="text-sm font-bold text-indigo-900 flex items-center gap-2"><CheckCircle size={16} /> Quick Actions</span>
+                      <div className="flex gap-2">
+                        {(() => {
+                          const presentMembers = item.memberVerifications.filter(m => m.isPresent);
+                          const isAllKitsGiven = presentMembers.length > 0 && presentMembers.every(m => m.registrationKitGiven);
+                          const isAllCertsGiven = presentMembers.length > 0 && presentMembers.every(m => m.certificateGiven);
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleToggleAllKits(item._id, !isAllKitsGiven)}
+                                disabled={submitting}
+                                className={`px-3 py-1.5 text-xs font-bold rounded shadow-sm transition-all border ${isAllKitsGiven ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
+                              >
+                                {isAllKitsGiven ? 'Revoke All Kits' : 'Issue All Kits'}
+                              </button>
+                              <button
+                                onClick={() => handleToggleAllCerts(item._id, !isAllCertsGiven)}
+                                disabled={submitting}
+                                className={`px-3 py-1.5 text-xs font-bold rounded shadow-sm transition-all border ${isAllCertsGiven ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
+                              >
+                                {isAllCertsGiven ? 'Revoke All Certs' : 'Issue All Certs'}
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Kits & Certificates */}
+                  <h4 className="font-black text-slate-700 mb-4 px-2">Member Kits & Certificates</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {item.memberVerifications.map((member, idx) => {
+                      if (!member.isPresent) return null;
+                      const certGiven = member.certificateGiven;
+                      const kitGiven = member.registrationKitGiven;
+                      return (
+                        <div key={idx} className={`p-4 rounded-xl border flex flex-col gap-3 transition-all ${kitGiven && certGiven ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                          <div>
+                            <p className="font-bold text-slate-800 flex items-center gap-2">
+                              <User className="text-slate-400" size={16} />
+                              {member.name}
+                              <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ml-1 ${member.role === 'Team Leader' || member.role === 'Leader' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
+                                {member.role || 'Member'}
+                              </span>
+                            </p>
+                          </div>
+                          
+                          {/* Kit Row */}
+                          <div className="flex justify-between items-center bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <Package size={16} className={kitGiven ? 'text-emerald-500' : 'text-slate-400'} />
+                              <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${kitGiven ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                                KIT {kitGiven ? 'ISSUED' : 'PENDING'}
+                              </span>
+                            </div>
+                            {editingTeam === item._id && (
+                              <button
+                                disabled={submitting}
+                                onClick={() => handleToggleKit(item._id, member.memberEmail, !kitGiven)}
+                                className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md transition-colors font-bold shadow-sm ${kitGiven ? 'text-red-600 bg-white hover:bg-red-50 border border-red-200' : 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200 border border-emerald-200'}`}
+                              >
+                                {kitGiven ? <X size={14} /> : <Check size={14} />} {kitGiven ? 'Revoke' : 'Issue'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Cert Row */}
+                          <div className="flex justify-between items-center bg-slate-50/50 p-2.5 rounded-lg border border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <FileText size={16} className={certGiven ? 'text-emerald-500' : 'text-slate-400'} />
+                              <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${certGiven ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                                CERT {certGiven ? 'ISSUED' : 'PENDING'}
+                              </span>
+                            </div>
+                            {editingTeam === item._id && (
+                              <button
+                                disabled={submitting}
+                                onClick={() => handleToggleCertificate(item._id, member.memberEmail, !certGiven)}
+                                className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md transition-colors font-bold shadow-sm ${certGiven ? 'text-red-600 bg-white hover:bg-red-50 border border-red-200' : 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200 border border-emerald-200'}`}
+                              >
+                                {certGiven ? <X size={14} /> : <Check size={14} />} {certGiven ? 'Revoke' : 'Issue'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-6 pt-4 border-t border-slate-100">
+                    {editingTeam === item._id ? (
+                      <div className="flex flex-col gap-3">
+                        <button onClick={() => handleSaveKitsCerts(item._id)} disabled={submitting || !item.isEdited} className="w-full py-4 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-black text-lg rounded-2xl shadow-md transition">
+                          {submitting ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button onClick={handleCancelEdit} disabled={submitting} className="w-full py-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-lg rounded-2xl shadow-md transition">
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setEditingTeam(item._id)} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg rounded-2xl shadow-md transition">
+                        Edit Kits & Certificates
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // --- MAIN CONSOLE COMPONENT ---
 export default function VolunteerConsole() {
   const [activeTab, setActiveTab] = useState("scan");
@@ -551,8 +1009,8 @@ export default function VolunteerConsole() {
     if (activeTab === "scan") {
       if (scannedToken) {
         return (
-          <VolunteerVerification 
-            qrToken={scannedToken} 
+          <VolunteerVerification
+            qrToken={scannedToken}
             onBack={() => setScannedToken(null)}
             onComplete={() => setScannedToken(null)}
           />
@@ -563,35 +1021,55 @@ export default function VolunteerConsole() {
     if (activeTab === "history") {
       if (historyToken) {
         return (
-          <VolunteerVerification 
-            qrToken={historyToken} 
-            onBack={() => setHistoryToken(null)}
-            onComplete={() => setHistoryToken(null)}
+          <VolunteerVerification
+            qrToken={historyToken}
+            onBack={() => { setHistoryToken(null); }}
+            onComplete={() => { setHistoryToken(null); }}
             buttonText="Back to History"
           />
         );
       }
       return <VolunteerHistory onSelectToken={(token) => setHistoryToken(token)} />;
     }
+    if (activeTab === "attendance") {
+      return <VolunteerAttendance />;
+    }
+    if (activeTab === "kits") {
+      return <VolunteerKitsCertificates />;
+    }
   };
 
   return (
     <div className="flex-1 bg-slate-50 flex flex-col md:flex-row font-sans h-[calc(100vh-80px)] md:h-[calc(100vh-80px)] relative">
-      
+
       {/* Desktop Sidebar Navigation */}
       <div className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 shadow-sm z-20">
         <div className="p-6 pb-2">
           <h2 className="text-xl font-black text-indigo-900 tracking-tight">Volunteer Portal</h2>
         </div>
         <div className="flex-1 p-4 space-y-2 mt-4">
-          <button 
+          <button
             onClick={() => { setActiveTab("scan"); setScannedToken(null); }}
             className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all ${activeTab === 'scan' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-medium'}`}
           >
             <QrCode size={20} strokeWidth={activeTab === 'scan' ? 2.5 : 2} />
             Scan QR
           </button>
-          <button 
+          <button
+            onClick={() => setActiveTab("attendance")}
+            className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-medium'}`}
+          >
+            <ListChecks size={20} strokeWidth={activeTab === 'attendance' ? 2.5 : 2} />
+            Attendance
+          </button>
+          <button
+            onClick={() => setActiveTab("kits")}
+            className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all ${activeTab === 'kits' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-medium'}`}
+          >
+            <Award size={20} strokeWidth={activeTab === 'kits' ? 2.5 : 2} />
+            Kits & Certificates
+          </button>
+          <button
             onClick={() => setActiveTab("history")}
             className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 font-medium'}`}
           >
@@ -607,10 +1085,10 @@ export default function VolunteerConsole() {
           {renderContent()}
         </div>
       </div>
-      
+
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
-        <button 
+        <button
           onClick={() => { setActiveTab("scan"); setScannedToken(null); }}
           className={`flex flex-col items-center justify-center w-full py-2 ${activeTab === 'scan' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
         >
@@ -619,7 +1097,25 @@ export default function VolunteerConsole() {
           </div>
           <span className="text-[10px] font-bold">SCAN</span>
         </button>
-        <button 
+        <button
+          onClick={() => setActiveTab("attendance")}
+          className={`flex flex-col items-center justify-center w-full py-2 ${activeTab === 'attendance' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <div className={`p-1.5 rounded-xl mb-1 transition-colors ${activeTab === 'attendance' ? 'bg-indigo-50' : ''}`}>
+            <ListChecks size={24} strokeWidth={activeTab === 'attendance' ? 2.5 : 2} />
+          </div>
+          <span className="text-[10px] font-bold">ATTEND</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("kits")}
+          className={`flex flex-col items-center justify-center w-full py-2 ${activeTab === 'kits' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        >
+          <div className={`p-1.5 rounded-xl mb-1 transition-colors ${activeTab === 'kits' ? 'bg-indigo-50' : ''}`}>
+            <Award size={24} strokeWidth={activeTab === 'kits' ? 2.5 : 2} />
+          </div>
+          <span className="text-[10px] font-bold">KITS</span>
+        </button>
+        <button
           onClick={() => setActiveTab("history")}
           className={`flex flex-col items-center justify-center w-full py-2 ${activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
         >

@@ -869,7 +869,7 @@ export function UsersView() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (form.role === "studentCoordinator" || form.role === "studentVolunteer") {
+    if (form.role === "studentCoordinator" || form.role === "studentVolunteer" || form.role === "facultyCoordinator") {
       const fullName = `${form.firstName} ${form.lastName}`.trim();
       const res = await fetch(`${API_BASE}/api/admin/users/global`, {
         method: "POST",
@@ -907,7 +907,7 @@ export function UsersView() {
   };
 
   const handleDeleteStudent = async (id, role) => {
-    if (!confirm(`Are you sure you want to delete this ${role === 'studentVolunteer' ? 'volunteer' : 'coordinator'}?`)) return;
+    if (!confirm(`Are you sure you want to delete this ${role === 'studentVolunteer' ? 'volunteer' : role === 'facultyCoordinator' ? 'faculty' : 'coordinator'}?`)) return;
     const res = await fetch(`${API_BASE}/api/admin/users/global/${role}/${id}`, { method: "DELETE" });
     if (res.ok) {
       fetchData();
@@ -1013,6 +1013,7 @@ export function UsersView() {
               <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="w-full border border-gray-300 rounded px-3 py-2 bg-white text-gray-700">
                 <option value="studentCoordinator">Student Coordinator</option>
                 <option value="studentVolunteer">Student Volunteer</option>
+                <option value="facultyCoordinator">Faculty Coordinator</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">Evaluators are created from inside an Event Track.</p>
             </div>
@@ -1047,14 +1048,14 @@ export function UsersView() {
         >
           <div className="flex items-center gap-3">
             <span className="text-sm">{isStudentsCollapsed ? '▶' : '▼'}</span>
-            <span>Student Staff (Coordinators & Volunteers) ({students.length})</span>
+            <span>Global Staff (Coordinators, Volunteers & Faculty) ({students.length})</span>
           </div>
         </div>
         {!isStudentsCollapsed && (
           loading ? (
             <div className="p-6 text-gray-500">Loading users...</div>
         ) : students.length === 0 ? (
-          <div className="p-6 text-gray-500">No student staff have been created yet.</div>
+          <div className="p-6 text-gray-500">No global staff have been created yet.</div>
         ) : (
           <div className="divide-y divide-gray-100">
             {students.map(sc => (
@@ -1097,7 +1098,7 @@ export function UsersView() {
                 {expandedId === sc._id && editStudentId !== sc._id && (
                   <div className="ml-5 mt-4 p-4 bg-gray-100 rounded-lg text-sm grid grid-cols-2 gap-2">
                     <div><span className="font-semibold text-gray-700">Phone:</span> {sc.phone || 'N/A'}</div>
-                    <div><span className="font-semibold text-gray-700">Type:</span> {sc.role === 'studentVolunteer' ? 'Student Volunteer' : 'Student Coordinator'} (Global)</div>
+                    <div><span className="font-semibold text-gray-700">Type:</span> {sc.role === 'studentVolunteer' ? 'Student Volunteer' : sc.role === 'facultyCoordinator' ? 'Faculty Coordinator' : 'Student Coordinator'} (Global)</div>
                     <div className="col-span-2 mt-2 pt-2 border-t border-gray-200">
                       <span className="font-semibold text-gray-700">Temporary Password:</span> 
                       <span className="ml-2 font-mono bg-white px-2 py-1 rounded border border-gray-300">

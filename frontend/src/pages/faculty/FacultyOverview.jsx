@@ -124,9 +124,9 @@ export default function FacultyOverview() {
           </h3>
           <div className="grid grid-cols-2 gap-4 h-[calc(100%-2rem)]">
             <div className="bg-purple-50 rounded-xl p-4 flex flex-col justify-center text-center">
-              <p className="text-sm font-bold text-purple-800 mb-2">Team Registration Kits</p>
+              <p className="text-sm font-bold text-purple-800 mb-2">Member Registration Kits</p>
               <p className="text-4xl font-black text-purple-600">{stats.registrationKitsGiven}</p>
-              <p className="text-xs text-purple-400 mt-2">Teams Received</p>
+              <p className="text-xs text-purple-400 mt-2">Members Received</p>
             </div>
             <div className="bg-fuchsia-50 rounded-xl p-4 flex flex-col justify-center text-center">
               <p className="text-sm font-bold text-fuchsia-800 mb-2">Participation Certs</p>

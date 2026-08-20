@@ -64,6 +64,7 @@ export const TeamVerificationSchema = new mongoose.Schema(
           day3: { type: Boolean, default: false },
         },
         certificateGiven: { type: Boolean, default: false },
+        registrationKitGiven: { type: Boolean, default: false },
         
         verifiedAt: Date,
       }
@@ -152,6 +153,7 @@ router.post("/admin/generate-team-qrs", async (req, res) => {
             isPresent: true,
             attendance: { day1: false, day2: false, day3: false },
             certificateGiven: false,
+            registrationKitGiven: false,
           });
         });
       }
@@ -453,6 +455,8 @@ router.put("/update-member-status", async (req, res) => {
 
     if (field === 'certificateGiven') {
       verification.memberVerifications[memberIndex].certificateGiven = Boolean(value);
+    } else if (field === 'registrationKitGiven') {
+      verification.memberVerifications[memberIndex].registrationKitGiven = Boolean(value);
     } else if (field === 'attendance' && ['day1', 'day2', 'day3'].includes(day)) {
       verification.memberVerifications[memberIndex].attendance[day] = Boolean(value);
     } else {
@@ -491,6 +495,8 @@ router.put("/bulk-update-members", async (req, res) => {
           if (updates.identityVerified !== undefined) verification.memberVerifications[memberIndex].identityVerified = updates.identityVerified;
           if (updates.governmentIdVerified !== undefined) verification.memberVerifications[memberIndex].governmentIdVerified = updates.governmentIdVerified;
           if (updates.consentVerified !== undefined) verification.memberVerifications[memberIndex].consentVerified = updates.consentVerified;
+          if (updates.registrationKitGiven !== undefined) verification.memberVerifications[memberIndex].registrationKitGiven = updates.registrationKitGiven;
+          if (updates.certificateGiven !== undefined) verification.memberVerifications[memberIndex].certificateGiven = updates.certificateGiven;
           if (updates.attendance) {
             if (updates.attendance.day1 !== undefined) verification.memberVerifications[memberIndex].attendance.day1 = updates.attendance.day1;
             if (updates.attendance.day2 !== undefined) verification.memberVerifications[memberIndex].attendance.day2 = updates.attendance.day2;
@@ -587,7 +593,11 @@ router.get("/faculty/dashboard", async (req, res) => {
       if (v.status === "CHECKED_IN") {
         checkedInTeams++;
         
-        if (v.registrationKitGiven) registrationKitsGiven++;
+        // Count team-level kits for backward compatibility if needed, but we'll count member kits mostly.
+        // Actually, we'll keep registrationKitsGiven as member-level metric here.
+        if (v.registrationKitGiven) {
+            // legacy, ignore in metric or add appropriately
+        }
         
         if (v.memberVerifications && Array.isArray(v.memberVerifications)) {
           for (const m of v.memberVerifications) {
@@ -603,6 +613,7 @@ router.get("/faculty/dashboard", async (req, res) => {
               if (!m.consentVerified) missingConsent++;
               
               if (m.certificateGiven) participationCertsGiven++;
+              if (m.registrationKitGiven) registrationKitsGiven++;
             }
           }
         }

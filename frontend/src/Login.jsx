@@ -93,6 +93,7 @@ const handleLogin = async (e) => {
       else if (data.role === "sessionChair") navigate("/session", { replace: true });
       else if (data.role === "studentCoordinator") navigate("/student", { replace: true });
       else if (data.role === "studentVolunteer") navigate("/volunteer", { replace: true });
+      else if (data.role === "facultyCoordinator") navigate("/faculty", { replace: true });
       else if (data.role === "teamLeader") navigate("/team", { replace: true });
 
   } catch (err) {

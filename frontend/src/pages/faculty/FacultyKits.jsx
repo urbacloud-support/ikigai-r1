@@ -24,6 +24,18 @@ export default function FacultyKits({ teamsData }) {
     return { given, total, status };
   };
 
+  const getKitsSummary = (team) => {
+    if (!team.memberVerifications || team.memberVerifications.length === 0) return { given: 0, total: 0, status: "None Given" };
+    const total = team.memberVerifications.length;
+    const given = team.memberVerifications.filter(m => m.registrationKitGiven).length;
+    
+    let status = "None Given";
+    if (given === total) status = "Fully Distributed";
+    else if (given > 0) status = "Partially Distributed";
+
+    return { given, total, status };
+  };
+
   const filteredTeams = teamsData.filter(team => {
     // 1. Search Filter
     const matchesSearch = 
@@ -35,9 +47,9 @@ export default function FacultyKits({ teamsData }) {
 
     // 2. Kit & Cert Filters
     const certs = getCertsSummary(team);
-    const kitStatus = team.registrationKitGiven ? "Given" : "Pending";
+    const kits = getKitsSummary(team);
 
-    if (filterTeamKit !== "All" && kitStatus !== filterTeamKit) return false;
+    if (filterTeamKit !== "All" && kits.status !== filterTeamKit) return false;
     if (filterCerts !== "All" && certs.status !== filterCerts) return false;
 
     return true;
@@ -73,15 +85,16 @@ export default function FacultyKits({ teamsData }) {
 
     filteredTeams.forEach(team => {
       const certs = getCertsSummary(team);
-      if (team.registrationKitGiven) totalKitsGiven++;
+      const kits = getKitsSummary(team);
+      totalKitsGiven += kits.given;
       totalCertsGiven += certs.given;
       totalMembers += certs.total;
       
       // Team Header Row
       tableRows.push([
-        { content: `[TEAM] ${team.teamName}`, styles: { fontStyle: 'bold', fillColor: [250, 240, 245] } },
+        { content: team.teamName, styles: { fontStyle: 'bold', fillColor: [250, 240, 245] } },
         { content: `${team.memberVerifications?.length || 0} Members`, styles: { fontStyle: 'bold', fillColor: [250, 240, 245] } },
-        { content: team.registrationKitGiven ? "Given" : "Pending", styles: { fontStyle: 'bold', fillColor: [250, 240, 245] } },
+        { content: `${kits.given}/${kits.total}`, styles: { fontStyle: 'bold', fillColor: [250, 240, 245] } },
         { content: `${certs.given}/${certs.total}`, styles: { fontStyle: 'bold', fillColor: [250, 240, 245] } }
       ]);
 
@@ -90,7 +103,7 @@ export default function FacultyKits({ teamsData }) {
           tableRows.push([
             `   ${m.name}`,
             m.role || "Member",
-            "-",
+            m.registrationKitGiven ? "Given" : "Pending",
             m.certificateGiven ? "Given" : "Pending"
           ]);
         });
@@ -100,7 +113,7 @@ export default function FacultyKits({ teamsData }) {
     tableRows.push([
       { content: "GRAND TOTAL", styles: { fontStyle: 'bold', fillColor: [240, 220, 230], halign: 'right' } },
       { content: `${totalTeams} Teams | ${totalMembers} Members`, styles: { fontStyle: 'bold', fillColor: [240, 220, 230] } },
-      { content: `${totalKitsGiven}/${totalTeams}`, styles: { fontStyle: 'bold', fillColor: [240, 220, 230] } },
+      { content: `${totalKitsGiven}/${totalMembers}`, styles: { fontStyle: 'bold', fillColor: [240, 220, 230] } },
       { content: `${totalCertsGiven}/${totalMembers}`, styles: { fontStyle: 'bold', fillColor: [240, 220, 230] } }
     ]);
 
@@ -120,14 +133,25 @@ export default function FacultyKits({ teamsData }) {
     if (filteredTeams.length === 0) return alert("No data");
     const exportData = [];
     
+    // Metadata Header
+    exportData.push({ "Type": "CUSTOM KITS & CERTS REPORT", "Name": "", "Role/Members": "", "Team Kit": "", "Certificates": "" });
+    exportData.push({ "Type": `Generated on: ${new Date().toLocaleDateString()}`, "Name": "", "Role/Members": "", "Team Kit": "", "Certificates": "" });
+    exportData.push({ "Type": `Filters Applied -> Team Kit: ${filterTeamKit} | Certs: ${filterCerts}`, "Name": "", "Role/Members": "", "Team Kit": "", "Certificates": "" });
+    exportData.push({ "Type": "", "Name": "", "Role/Members": "", "Team Kit": "", "Certificates": "" }); // Empty Row
+
     let totalKitsGiven = 0;
     let totalCertsGiven = 0;
     let totalMembers = 0;
     let totalTeams = filteredTeams.length;
 
-    filteredTeams.forEach(team => {
+    filteredTeams.forEach((team, idx) => {
+      if (idx > 0) {
+        exportData.push({ "Type": "", "Name": "", "Role/Members": "", "Team Kit": "", "Certificates": "" }); // Spacer
+      }
+
       const certs = getCertsSummary(team);
-      if (team.registrationKitGiven) totalKitsGiven++;
+      const kits = getKitsSummary(team);
+      totalKitsGiven += kits.given;
       totalCertsGiven += certs.given;
       totalMembers += certs.total;
 
@@ -135,7 +159,7 @@ export default function FacultyKits({ teamsData }) {
         "Type": "TEAM",
         "Name": team.teamName,
         "Role/Members": `${team.memberVerifications?.length || 0} Members`,
-        "Team Kit": team.registrationKitGiven ? "Given" : "Pending",
+        "Team Kit": `${kits.given}/${kits.total}`,
         "Certificates": `${certs.given}/${certs.total}`
       });
 
@@ -143,24 +167,35 @@ export default function FacultyKits({ teamsData }) {
         team.memberVerifications.forEach(m => {
           exportData.push({
             "Type": "Member",
-            "Name": m.name,
+            "Name": `   ${m.name}`,
             "Role/Members": m.role || "Member",
-            "Team Kit": "-",
+            "Team Kit": m.registrationKitGiven ? "Given" : "Pending",
             "Certificates": m.certificateGiven ? "Given" : "Pending"
           });
         });
       }
     });
 
+    exportData.push({ "Type": "", "Name": "", "Role/Members": "", "Team Kit": "", "Certificates": "" }); // Spacer
+
     exportData.push({
       "Type": "TOTAL",
       "Name": "GRAND TOTAL",
       "Role/Members": `${totalTeams} Teams | ${totalMembers} Members`,
-      "Team Kit": `${totalKitsGiven}/${totalTeams}`,
+      "Team Kit": `${totalKitsGiven}/${totalMembers}`,
       "Certificates": `${totalCertsGiven}/${totalMembers}`
     });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    worksheet["!cols"] = [
+      { wch: 15 }, // Type
+      { wch: 35 }, // Name
+      { wch: 25 }, // Role/Members
+      { wch: 15 }, // Team Kit
+      { wch: 15 }  // Certificates
+    ];
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Kits & Certs");
     XLSX.writeFile(workbook, `Custom_Kits_Certs_${Date.now()}.xlsx`);
@@ -192,7 +227,7 @@ export default function FacultyKits({ teamsData }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
         {/* Filter Row */}
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col xl:flex-row gap-4">
           <div className="relative flex-1">
@@ -209,11 +244,12 @@ export default function FacultyKits({ teamsData }) {
           <div className="flex items-center gap-3 overflow-x-auto pb-2 xl:pb-0 hide-scrollbar">
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl whitespace-nowrap shadow-sm">
               <Package size={16} className="text-slate-400" />
-              <span className="text-sm font-semibold text-slate-600">Team Kit:</span>
+              <span className="text-sm font-semibold text-slate-600">Member Kits:</span>
               <select value={filterTeamKit} onChange={e => setFilterTeamKit(e.target.value)} className="bg-transparent text-sm font-bold text-fuchsia-700 outline-none cursor-pointer">
                 <option value="All">All</option>
-                <option value="Given">Given</option>
-                <option value="Pending">Pending</option>
+                <option value="Fully Distributed">Fully Distributed</option>
+                <option value="Partially Distributed">Partially Distributed</option>
+                <option value="None Given">None Given</option>
               </select>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl whitespace-nowrap shadow-sm">
@@ -229,12 +265,14 @@ export default function FacultyKits({ teamsData }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm font-semibold">
+        <div className="w-full flex-1 overflow-hidden flex flex-col">
+          {/* Desktop Table */}
+          <div className="hidden md:block flex-1 overflow-auto">
+            <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b border-slate-200 text-slate-600 text-sm font-semibold">
               <tr>
                 <th className="py-3 px-4 w-1/3">Team Name</th>
-                <th className="py-3 px-4 text-center">Team Kit</th>
+                <th className="py-3 px-4 text-center">Kits</th>
                 <th className="py-3 px-4 text-center">Certificates</th>
                 <th className="py-3 px-4 text-right">Details</th>
               </tr>
@@ -242,7 +280,8 @@ export default function FacultyKits({ teamsData }) {
             <tbody>
               {filteredTeams.map(team => {
                 const certs = getCertsSummary(team);
-                if (team.registrationKitGiven) uiTotalKitsGiven++;
+                const kits = getKitsSummary(team);
+                uiTotalKitsGiven += kits.given;
                 uiTotalCertsGiven += certs.given;
                 uiTotalMembers += certs.total;
 
@@ -259,8 +298,8 @@ export default function FacultyKits({ teamsData }) {
                         <div className="text-xs text-slate-500">{team.memberVerifications?.length || 0} Members</div>
                       </td>
                       <td className="py-4 px-4 text-center">
-                        <span className={`inline-block px-3 py-1 rounded-lg text-xs font-bold ${team.registrationKitGiven ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                          {team.registrationKitGiven ? "Given" : "Pending"}
+                        <span className={`inline-block px-3 py-1 rounded-lg text-xs font-bold ${kits.status === 'Fully Distributed' ? 'bg-emerald-100 text-emerald-700' : kits.status === 'Partially Distributed' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {kits.given}/{kits.total}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-center">
@@ -284,8 +323,9 @@ export default function FacultyKits({ teamsData }) {
                                 <table className="w-full text-sm">
                                   <thead className="bg-slate-100 border-b border-slate-200">
                                     <tr className="text-slate-600 font-semibold text-left">
-                                      <th className="py-2 px-4 w-1/2">Member Name</th>
-                                      <th className="py-2 px-4 text-center w-1/2">Participation Certificate</th>
+                                      <th className="py-2 px-4 w-1/3">Member Name</th>
+                                      <th className="py-2 px-4 text-center w-1/3">Registration Kit</th>
+                                      <th className="py-2 px-4 text-center w-1/3">Participation Certificate</th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -294,6 +334,7 @@ export default function FacultyKits({ teamsData }) {
                                         <td className="py-3 px-4 font-medium text-slate-700">
                                           {m.name} <span className="text-xs text-slate-400 font-normal ml-1">({m.role})</span>
                                         </td>
+                                        <td className="py-3 px-4"><div className="flex justify-center"><StatusIcon status={m.registrationKitGiven} /></div></td>
                                         <td className="py-3 px-4"><div className="flex justify-center"><StatusIcon status={m.certificateGiven} /></div></td>
                                       </tr>
                                     ))}
@@ -324,7 +365,7 @@ export default function FacultyKits({ teamsData }) {
                 <tr>
                   <td className="py-4 px-4 text-right uppercase tracking-wider text-sm">Grand Total</td>
                   <td className="py-4 px-4 text-center">
-                    <span className="bg-white px-3 py-1 rounded-lg border border-fuchsia-100 shadow-sm">{uiTotalKitsGiven}/{uiTotalTeams} Teams</span>
+                    <span className="bg-white px-3 py-1 rounded-lg border border-fuchsia-100 shadow-sm">{uiTotalKitsGiven}/{uiTotalMembers} Members</span>
                   </td>
                   <td className="py-4 px-4 text-center">
                     <span className="bg-white px-3 py-1 rounded-lg border border-fuchsia-100 shadow-sm">{uiTotalCertsGiven}/{uiTotalMembers} Members</span>
@@ -333,7 +374,98 @@ export default function FacultyKits({ teamsData }) {
                 </tr>
               </tfoot>
             )}
-          </table>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden flex-1 overflow-auto flex flex-col divide-y divide-slate-100">
+            {filteredTeams.map(team => {
+              const certs = getCertsSummary(team);
+              const kits = getKitsSummary(team);
+              const isExpanded = expandedTeamId === team._id;
+
+              return (
+                <div key={team._id} className="flex flex-col">
+                  <div 
+                    className={`p-4 flex flex-col gap-3 cursor-pointer hover:bg-slate-50 transition ${isExpanded ? 'bg-fuchsia-50/30' : ''}`}
+                    onClick={() => setExpandedTeamId(isExpanded ? null : team._id)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-bold text-slate-800 text-lg">{team.teamName}</h3>
+                      <div className="text-slate-400">
+                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <div className="flex gap-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Kits</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold w-fit ${kits.status === 'Fully Distributed' ? 'bg-emerald-100 text-emerald-700' : kits.status === 'Partially Distributed' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{kits.given}/{kits.total}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Certs</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold w-fit ${certs.status === 'Fully Distributed' ? 'bg-emerald-100 text-emerald-700' : certs.status === 'Partially Distributed' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{certs.given}/{certs.total}</span>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-slate-500">{team.memberVerifications?.length || 0} Members</span>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="p-4 bg-slate-50 border-t border-slate-100">
+                      {team.memberVerifications?.length > 0 ? (
+                        <div className="flex flex-col gap-4">
+                          {team.memberVerifications.map((m, i) => (
+                            <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
+                              <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                <span className="font-bold text-slate-700">{m.name}</span>
+                                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{m.role || 'Member'}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-center">
+                                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-lg p-2 border border-slate-100">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Kit</span>
+                                  <StatusIcon status={m.registrationKitGiven} />
+                                </div>
+                                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-lg p-2 border border-slate-100">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Cert</span>
+                                  <StatusIcon status={m.certificateGiven} />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No members found.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            
+            {filteredTeams.length === 0 && (
+              <div className="p-8 text-center text-slate-500">
+                <div className="text-lg font-bold text-slate-600 mb-1">No matches found</div>
+                <p className="text-sm">Try adjusting your search or filters.</p>
+              </div>
+            )}
+            
+            {filteredTeams.length > 0 && (
+              <div className="p-4 bg-fuchsia-50 border-t border-fuchsia-100 flex flex-col gap-3">
+                <div className="text-sm font-bold text-fuchsia-900 uppercase tracking-wider text-center">Grand Total</div>
+                <div className="flex justify-between items-center gap-2">
+                  <div className="flex flex-col items-center flex-1 bg-white p-2 rounded-lg border border-fuchsia-100 shadow-sm">
+                    <span className="text-[10px] uppercase font-bold text-fuchsia-400 mb-1">Kits Given</span>
+                    <span className="text-sm font-bold text-fuchsia-700">{uiTotalKitsGiven}/{uiTotalMembers}</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1 bg-white p-2 rounded-lg border border-fuchsia-100 shadow-sm">
+                    <span className="text-[10px] uppercase font-bold text-fuchsia-400 mb-1">Certs Given</span>
+                    <span className="text-sm font-bold text-fuchsia-700">{uiTotalCertsGiven}/{uiTotalMembers}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
