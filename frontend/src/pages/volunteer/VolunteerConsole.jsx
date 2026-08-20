@@ -1,38 +1,153 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, Navigate, useLocation, Link } from "react-router-dom";
-import { QrCode, ClipboardList, LogOut, CheckCircle, Clock, AlertTriangle, ChevronRight, X, User, Circle, Search, ArrowDownUp, Calendar, Users, Award, ListChecks, Package, FileText, Check } from "lucide-react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { QrCode, ClipboardList, LogOut, CheckCircle, Clock, AlertTriangle, ChevronRight, X, User, Circle, Search, ArrowDownUp, Calendar, Users, Award, ListChecks, Package, FileText, Check, Camera, Image as ImageIcon, StopCircle, Upload } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
-// --- SCANNER COMPONENT ---
 function VolunteerScanner({ onScanSuccess }) {
+  const [isScanning, setIsScanning] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const html5QrCodeRef = React.useRef(null);
+  const fileInputRef = React.useRef(null);
+
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("reader", {
-      qrbox: { width: 250, height: 250 },
-      fps: 5
-    });
-
-    scanner.render((decodedText) => {
-      scanner.clear();
-      onScanSuccess(decodedText);
-    }, (error) => {
-      // Ignore scan errors, happens constantly when scanning
-    });
-
+    html5QrCodeRef.current = new Html5Qrcode("reader");
+    
     return () => {
-      scanner.clear().catch(error => console.error("Failed to clear scanner", error));
+      if (html5QrCodeRef.current && html5QrCodeRef.current.getState() === 2) {
+        html5QrCodeRef.current.stop().catch(console.error);
+      }
     };
-  }, [onScanSuccess]);
+  }, []);
+
+  const startCamera = async () => {
+    try {
+      setErrorMsg("");
+      setCameraLoading(true);
+      await html5QrCodeRef.current.start(
+        { facingMode: "environment" },
+        { fps: 10 },
+        (decodedText) => {
+          html5QrCodeRef.current.stop();
+          setIsScanning(false);
+          onScanSuccess(decodedText);
+        },
+        () => {
+          // Ignore background scanning errors
+        }
+      );
+      setIsScanning(true);
+      setCameraLoading(false);
+    } catch (err) {
+      setCameraLoading(false);
+      setErrorMsg("Failed to start camera. Please check browser permissions.");
+      console.error(err);
+    }
+  };
+
+  const stopCamera = async () => {
+    try {
+      if (html5QrCodeRef.current && html5QrCodeRef.current.getState() === 2) {
+        await html5QrCodeRef.current.stop();
+        setIsScanning(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setErrorMsg("");
+    try {
+      if (html5QrCodeRef.current && html5QrCodeRef.current.getState() === 2) {
+        await stopCamera();
+      }
+      
+      // The `true` parameter forces the library to scan the full image, bypassing the restrictive qrbox
+      const decodedText = await html5QrCodeRef.current.scanFileV2(file, true);
+      onScanSuccess(decodedText.decodedText || decodedText);
+    } catch (err) {
+      setErrorMsg("Could not detect a valid QR code in that image. Try a clearer image or use the camera.");
+      console.error(err);
+    }
+    
+    e.target.value = ""; // reset
+  };
 
   return (
     <div className="flex flex-col items-center justify-center p-4 h-full md:p-8">
       <div className="bg-white rounded-3xl p-6 shadow-xl border border-indigo-100 w-full max-w-sm md:max-w-md mb-6 transition-all hover:shadow-2xl">
-        <h2 className="text-xl font-bold text-center text-indigo-900 mb-4 flex items-center justify-center gap-2">
-          <QrCode className="text-indigo-600" /> Scan Team QR
+        <h2 className="text-xl font-black text-center text-indigo-900 mb-4 flex items-center justify-center gap-2">
+          <QrCode className="text-indigo-600" /> Entry Verification
         </h2>
-        <div id="reader" className="w-full overflow-hidden rounded-xl border-2 border-indigo-200"></div>
-        <p className="text-center text-sm text-indigo-500 mt-4">Point your camera at the team's QR code to begin verification.</p>
+        
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100 flex items-start gap-2">
+            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+            <p>{errorMsg}</p>
+          </div>
+        )}
+
+        {/* Video feed container */}
+        <div 
+          id="reader" 
+          className={`w-full overflow-hidden rounded-2xl border-2 ${isScanning ? 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 'border-indigo-100 bg-slate-50'} transition-all duration-300 ${isScanning ? 'min-h-[250px]' : 'min-h-0'}`}
+        ></div>
+
+        <div className="mt-6 flex flex-col gap-3">
+          {!isScanning ? (
+            <button
+              onClick={startCamera}
+              disabled={cameraLoading}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all active:scale-[0.98] disabled:opacity-70"
+            >
+              {cameraLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Camera size={20} />
+              )}
+              {cameraLoading ? "Starting Camera..." : "Scan with Camera"}
+            </button>
+          ) : (
+            <button
+              onClick={stopCamera}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-all active:scale-[0.98] border border-red-200"
+            >
+              <StopCircle size={20} />
+              Stop Camera
+            </button>
+          )}
+
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-slate-200"></div>
+            <span className="shrink-0 px-4 text-slate-400 text-sm font-semibold uppercase">Or</span>
+            <div className="flex-grow border-t border-slate-200"></div>
+          </div>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-slate-50 text-indigo-700 font-bold rounded-xl transition-all active:scale-[0.98] border border-indigo-200 shadow-sm"
+          >
+            <ImageIcon size={20} className="text-indigo-500" />
+            Upload Image File
+          </button>
+          <input 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+          />
+        </div>
+        
+        <p className="text-center text-xs font-medium text-slate-400 mt-6 px-4">
+          Point your camera directly at the QR code, or upload a clear screenshot of the pass.
+        </p>
       </div>
     </div>
   );
