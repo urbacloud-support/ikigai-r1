@@ -426,10 +426,11 @@ export default function TeamHome() {
       <HackathonCountdown />
 
       {/* Timeline UI */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Your Progress</h2>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative pt-4 pb-2">
-          {/* Connecting Line */}
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 md:mb-6">Your Progress</h2>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative pt-4 pb-2 w-full gap-8 md:gap-0">
+          
+          {/* Connecting Line (Desktop) */}
           <div className="hidden md:block absolute top-[41px] left-[10%] right-[10%] h-1.5 bg-gray-200 z-0 rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 transition-all duration-500 ease-in-out"
@@ -446,115 +447,142 @@ export default function TeamHome() {
             ></div>
           </div>
 
+          {/* Connecting Line (Mobile Vertical) */}
+          <div className="md:hidden absolute top-8 bottom-8 left-[35px] w-1.5 bg-gray-200 z-0 rounded-full overflow-hidden">
+            <div
+              className="w-full bg-green-500 transition-all duration-500 ease-in-out"
+              style={{
+                height:
+                  regStatus === "Approved" && assignedTrack && publishProblemStatements
+                    ? "75%"
+                    : regStatus === "Approved"
+                      ? "50%"
+                      : submitted && !isReopened
+                        ? "25%"
+                        : "0%",
+              }}
+            ></div>
+          </div>
+
           {/* Step 1: Round 1 */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative group">
-            <div className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg mb-3 shadow-[0_0_15px_rgba(34,197,94,0.4)] ring-4 ring-white transition-all">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
+            <div className="w-14 h-14 shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg md:mb-3 shadow-[0_0_15px_rgba(34,197,94,0.4)] ring-4 ring-white transition-all">
               1
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Round 1</p>
-            <p className="text-xs text-green-600 font-bold mt-1">Shortlisted</p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Round 1</p>
+              <p className="text-xs text-green-600 font-bold md:mt-1">Shortlisted</p>
+            </div>
           </div>
 
           {/* Step 2: Registration */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
             <div
-              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all ${
+              className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all ${
                 submitted && !isReopened
                   ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-                  : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] scale-110"
+                  : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] md:scale-110"
               }`}
             >
               2
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Registration</p>
-            <p
-              className={`text-xs font-bold mt-1 ${submitted && !isReopened ? "text-green-600" : "text-purple-600"}`}
-            >
-              {submitted && !isReopened
-                ? "Completed"
-                : isReopened
-                  ? "Correction Required"
-                  : "Action Required"}
-            </p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Registration</p>
+              <p
+                className={`text-xs font-bold md:mt-1 ${submitted && !isReopened ? "text-green-600" : "text-purple-600"}`}
+              >
+                {submitted && !isReopened
+                  ? "Completed"
+                  : isReopened
+                    ? "Correction Required"
+                    : "Action Required"}
+              </p>
+            </div>
           </div>
 
           {/* Step 3: Verification */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
             <div
-              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all ${
+              className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all ${
                 regStatus === "Approved"
                   ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                   : submitted && !isReopened && regStatus === "Contact"
-                    ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.6)] scale-110"
+                    ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.6)] md:scale-110"
                     : submitted && !isReopened
-                      ? "bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.6)] scale-110"
+                      ? "bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.6)] md:scale-110"
                       : "bg-gray-100 text-gray-400 border-2 border-gray-200"
               }`}
             >
               3
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Verification</p>
-            <p
-              className={`text-xs font-bold mt-1 ${
-                regStatus === "Approved"
-                  ? "text-green-600"
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Verification</p>
+              <p
+                className={`text-xs font-bold md:mt-1 ${
+                  regStatus === "Approved"
+                    ? "text-green-600"
+                    : submitted && !isReopened && regStatus === "Contact"
+                      ? "text-red-600"
+                      : submitted && !isReopened
+                        ? "text-amber-600"
+                        : "text-gray-400"
+                }`}
+              >
+                {regStatus === "Approved"
+                  ? "Verified"
                   : submitted && !isReopened && regStatus === "Contact"
-                    ? "text-red-600"
+                    ? "Contact Admin"
                     : submitted && !isReopened
-                      ? "text-amber-600"
-                      : "text-gray-400"
-              }`}
-            >
-              {regStatus === "Approved"
-                ? "Verified"
-                : submitted && !isReopened && regStatus === "Contact"
-                  ? "Contact Admin"
-                  : submitted && !isReopened
-                    ? "Pending Review"
-                    : "Awaiting Details"}
-            </p>
+                      ? "Pending Review"
+                      : "Awaiting Details"}
+              </p>
+            </div>
           </div>
 
           {/* Step 4: Problem Statement */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
             <div
-              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all ${
+              className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all ${
                 regStatus === "Approved" && assignedTrack && publishProblemStatements
                   ? assignedProblemStatement 
                     ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-                    : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] scale-110"
+                    : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] md:scale-110"
                   : "bg-gray-100 text-gray-400 border-2 border-gray-200"
               }`}
             >
               4
             </div>
-            <p className="text-sm font-extrabold text-gray-900">
-              Problem Statement
-            </p>
-            <p
-              className={`text-xs font-bold mt-1 ${
-                regStatus === "Approved" && assignedTrack && publishProblemStatements 
-                  ? assignedProblemStatement ? "text-green-600" : "text-purple-600" 
-                  : "text-gray-400"
-              }`}
-            >
-              {regStatus === "Approved" && assignedTrack && publishProblemStatements
-                ? assignedProblemStatement
-                  ? "Locked In"
-                  : "Released"
-                : "Awaiting Release"}
-            </p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">
+                Problem Statement
+              </p>
+              <p
+                className={`text-xs font-bold md:mt-1 ${
+                  regStatus === "Approved" && assignedTrack && publishProblemStatements 
+                    ? assignedProblemStatement ? "text-green-600" : "text-purple-600" 
+                    : "text-gray-400"
+                }`}
+              >
+                {regStatus === "Approved" && assignedTrack && publishProblemStatements
+                  ? assignedProblemStatement
+                    ? "Locked In"
+                    : "Released"
+                  : "Awaiting Release"}
+              </p>
+            </div>
           </div>
 
           {/* Step 5: Round 2 */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all bg-gray-100 text-gray-400 border-2 border-gray-200">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
+            <div className="w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all bg-gray-100 text-gray-400 border-2 border-gray-200">
               5
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Round 2</p>
-            <p className="text-xs text-gray-500 font-bold mt-1">
-              Hackathon (Aug 21)
-            </p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Round 2</p>
+              <p className="text-xs text-gray-500 font-bold md:mt-1">
+                Hackathon (Aug 21)
+              </p>
+            </div>
           </div>
         </div>
       </div>

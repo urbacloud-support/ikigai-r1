@@ -22,12 +22,14 @@ app.use(
     origin: function (origin, callback) {
       const allowedOrigins = [
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "https://care-zeta.vercel.app",
         "https://ikigai-csit.up.railway.app"
       ];
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app')) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app') || (origin && (origin.includes('localhost') || origin.includes('127.0.0.1')))) {
         callback(null, true);
       } else {
+        console.error("Blocked by CORS. Origin:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },

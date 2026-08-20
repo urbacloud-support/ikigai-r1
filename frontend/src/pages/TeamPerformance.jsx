@@ -57,15 +57,15 @@ export default function TeamPerformance() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto w-full space-y-8 animate-fade-in pb-8">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2.5 bg-green-100 text-green-700 rounded-xl">
+    <div className="max-w-5xl mx-auto w-full space-y-8 animate-fade-in pb-8 md:pt-4">
+      <div className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8 bg-gradient-to-br from-white to-slate-50">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="p-3 bg-green-100 text-green-700 rounded-2xl shadow-inner">
             <Award size={28} />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Performance</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Performance</h1>
         </div>
-        <p className="text-gray-600 leading-relaxed ml-14">
+        <p className="text-slate-600 leading-relaxed md:ml-16 mt-2 md:mt-0 text-sm md:text-base">
           View your team's event-wise assessment feedback and progress insights provided by the evaluators.
         </p>
       </div>
@@ -81,28 +81,30 @@ export default function TeamPerformance() {
       ) : (
         <div className="space-y-8">
           {performances.map((perf, index) => (
-            <div key={index} className="space-y-4">
-              <h2 className="text-xl font-black text-slate-800 border-b border-gray-200 pb-3 flex items-center gap-2">
-                <div className="w-2 h-6 bg-green-500 rounded-full"></div>
+            <div key={index} className="space-y-6">
+              <h2 className="text-xl md:text-2xl font-black text-slate-900 border-b-2 border-slate-100 pb-4 flex items-center gap-3">
+                <div className="w-2.5 h-8 bg-gradient-to-b from-green-400 to-green-600 rounded-full shadow-sm"></div>
                 {perf.eventName}
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                 {perf.assessments.map((assessment, aIdx) => (
-                  <div key={aIdx} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden">
-                    <div className="bg-slate-50 border-b border-gray-100 px-5 py-3 flex justify-between items-center">
-                      <span className="font-bold text-slate-700 text-sm uppercase tracking-wide flex items-center gap-2">
-                        <FileText size={16} className="text-indigo-500" />
+                  <div key={aIdx} className="bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-slate-200 overflow-hidden group">
+                    <div className="bg-indigo-50/50 border-b border-indigo-100/50 px-4 md:px-5 py-3.5 flex justify-between items-center group-hover:bg-indigo-50 transition-colors">
+                      <span className="font-bold text-slate-800 text-sm flex items-center gap-3">
+                        <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg shadow-sm">
+                          <FileText size={16} />
+                        </div>
                         {assessment.evaluatorName ? `Evaluator: ${assessment.evaluatorName}` : `Evaluation #${aIdx + 1}`}
                       </span>
                     </div>
-                    <div className="p-5 space-y-4">
+                    <div className="p-4 md:p-6 space-y-4">
                       {Object.entries(assessment.textData || assessment).map(([key, value], i) => {
-                        if (key === 'evaluatorName' && !assessment.textData) return null; // Skip if iterating raw object
+                        if (key === 'evaluatorName' && !assessment.textData) return null;
                         return (
-                          <div key={i} className="flex flex-col gap-1">
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{key}</span>
-                            <div className="bg-slate-50 text-slate-800 p-3 rounded-xl text-sm leading-relaxed border border-gray-100">
+                          <div key={i} className="flex flex-col">
+                            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">{key}</span>
+                            <div className="bg-slate-50 hover:bg-slate-100/50 text-slate-800 p-3.5 md:p-4 rounded-2xl text-sm leading-relaxed border border-slate-100 transition-colors shadow-inner">
                               {value || <span className="text-gray-400 italic">No feedback provided</span>}
                             </div>
                           </div>
