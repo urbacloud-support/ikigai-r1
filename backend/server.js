@@ -2957,7 +2957,7 @@ app.get('/api/admin/evaluators/all', async (req, res) => {
 app.post("/api/admin/users/global", async (req, res) => {
   try {
     const { name, firstName, email, phone, role } = req.body;
-    
+
     // Check if exists globally
     const isUnique = await checkEmailUnique(email);
     if (!isUnique) {
@@ -3006,13 +3006,13 @@ app.get("/api/admin/users/global", async (req, res) => {
     const coordinators = await StudentCoordinator.find({ eventId: "global" }).lean();
     const volunteers = await StudentVolunteer.find({ eventId: "global" }).lean();
     const faculties = await FacultyCoordinator.find({ eventId: "global" }).lean();
-    
+
     const users = [
       ...coordinators.map(c => ({ ...c, role: 'studentCoordinator' })),
       ...volunteers.map(v => ({ ...v, role: 'studentVolunteer' })),
       ...faculties.map(f => ({ ...f, role: 'facultyCoordinator' }))
     ];
-    
+
     res.json({ success: true, users });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -3221,6 +3221,124 @@ app.get("/api/team/my-details", async (req, res) => {
 
     res.json({ success: true, team: teamObj });
   } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Performance route to fetch event wise assessment containing only text fields
+app.get("/api/team/performance", async (req, res) => {
+  try {
+    const email = req.query.email?.toLowerCase();
+    if (!email) return res.status(400).json({ success: false, message: "Email required" });
+
+    const db = mongoose.connection.db;
+    // Explicitly reference ikigai2 db as requested
+    const ikigai2Db = mongoose.connection.client.db("ikigai2");
+    const query = { $or: [{ "members.email": email }, { leaderEmail: email }] };
+
+    // Check various collections where the team might be stored, prioritizing ikigai2 teams
+    let teams = await ikigai2Db.collection("teams").find(query).toArray();
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("teams").find(query).toArray();
+    }
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("round2").find(query).toArray();
+    }
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("shortlisteds").find(query).toArray();
+    }
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("participants").find(query).toArray();
+    }
+
+    // Fallback: check TeamLeader collection
+    if (!teams || teams.length === 0) {
+      const tl = await db.collection("teamleaders").findOne({ email });
+      if (tl && tl.participantId) {
+        const idQuery = {
+          $or: [
+            { participantId: tl.participantId },
+            { _id: new mongoose.Types.ObjectId(tl.participantId) }
+          ]
+        };
+        teams = await ikigai2Db.collection("teams").find(idQuery).toArray();
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("teams").find(idQuery).toArray();
+        }
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("round2").find(idQuery).toArray();
+        }
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("shortlisteds").find(idQuery).toArray();
+        }
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("participants").find(idQuery).toArray();
+        }
+      }
+    }
+
+    if (!teams || teams.length === 0) {
+      return res.json({ success: true, performances: [] });
+    }
+
+    const performances = [];
+
+    for (const team of teams) {
+      const assessmentsList = team.Assessments || team.assessments;
+      if (!assessmentsList || !Array.isArray(assessmentsList)) continue;
+
+      for (const assessment of assessmentsList) {
+        if (!assessment) continue;
+
+        const eventName = assessment.eventName || "Unknown Event";
+        const teamAssessments = [];
+
+        // Helper function to extract text data from a list of criteria
+        const extractTextData = (criteriaList, evaluatorName) => {
+          if (!criteriaList || !Array.isArray(criteriaList)) return;
+          const textData = {};
+          let hasTextData = false;
+          for (const crit of criteriaList) {
+            if (crit && typeof crit === 'object' && crit.name) {
+              // Strictly capture ONLY fields where inputType is text
+              if (crit.inputType === 'text') {
+                const val = crit.score || crit.value || "No feedback";
+                textData[crit.name] = val;
+                hasTextData = true;
+              }
+            }
+          }
+          if (hasTextData) {
+            teamAssessments.push({ evaluatorName, textData });
+          }
+        };
+
+        // Handle the new nested structure: assessment.evaluatorScores
+        if (assessment.evaluatorScores && Array.isArray(assessment.evaluatorScores)) {
+          for (const evaluatorScore of assessment.evaluatorScores) {
+            const evaluatorName = evaluatorScore.evaluatorName || "Unknown Evaluator";
+            extractTextData(evaluatorScore.criteria, evaluatorName);
+          }
+        } 
+        // Handle the flat structure: assessment.criteria
+        else if (assessment.criteria && Array.isArray(assessment.criteria)) {
+          const evaluatorName = assessment.evaluatedBy || "Unknown Evaluator";
+          extractTextData(assessment.criteria, evaluatorName);
+        }
+
+        // Push this event's performance if we found text feedback
+        if (teamAssessments.length > 0) {
+          performances.push({
+            eventName,
+            assessments: teamAssessments
+          });
+        }
+      }
+    }
+
+    res.json({ success: true, performances });
+  } catch (err) {
+    console.error("Error fetching performance:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

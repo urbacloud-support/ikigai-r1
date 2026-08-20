@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { Menu, Home, Users, Phone, HelpCircle, ChevronUp, ChevronDown, QrCode } from "lucide-react";
+import { Menu, Home, Users, Phone, HelpCircle, ChevronUp, ChevronDown, QrCode, Award } from "lucide-react";
 
 export default function TeamLayout() {
   const location = useLocation();
@@ -32,11 +32,13 @@ export default function TeamLayout() {
   let activeTab = "home";
   if (path.includes("/team/myteam")) activeTab = "myteam";
   else if (path.includes("/team/entry-pass")) activeTab = "entry-pass";
+  else if (path.includes("/team/performance")) activeTab = "performance";
 
   const navItems = [
     { id: "home", label: "Home", icon: Home, path: "/team" },
     { id: "myteam", label: "My Team", icon: Users, path: "/team/myteam" },
     { id: "entry-pass", label: "Entry Pass", icon: QrCode, path: "/team/entry-pass" },
+    { id: "performance", label: "Performance", icon: Award, path: "/team/performance" },
   ];
 
   return (
