@@ -36,6 +36,7 @@ import AdminEntryVerification from "./pages/admin/AdminEntryVerification";
 import TeamLayout from "./pages/TeamLayout";
 import TeamHome from "./pages/TeamHome";
 import TeamMyTeam from "./pages/TeamMyTeam";
+import TeamEntryPass from "./pages/TeamEntryPass";
 import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 import ikigaiLogo from "./assets/ikigai.png";
 import { FileText, CheckCircle, Link2, User, Mail, Phone, Building2, BookOpen, GraduationCap, MapPin, X, Bell } from "lucide-react";
@@ -5096,6 +5097,7 @@ function AppRoutes({ events, setEvents, refreshEvents }) {
           <Route path="/team" element={<TeamLayout />}>
             <Route index element={<TeamHome />} />
             <Route path="myteam" element={<TeamMyTeam />} />
+            <Route path="entry-pass" element={<TeamEntryPass />} />
           </Route>
         </Route>
 
