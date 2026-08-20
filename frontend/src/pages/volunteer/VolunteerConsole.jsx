@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, Navigate, useLocation, Link } from "react-router-dom";
 import { QrCode, ClipboardList, LogOut, CheckCircle, Clock, AlertTriangle, ChevronRight, X, User, Circle, Search, ArrowDownUp, Calendar, Users, Award, ListChecks, Package, FileText, Check, Camera, Image as ImageIcon, StopCircle, Upload } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
+import jsQR from "jsqr";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -58,25 +59,63 @@ function VolunteerScanner({ onScanSuccess }) {
     }
   };
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
     setErrorMsg("");
-    try {
-      if (html5QrCodeRef.current && html5QrCodeRef.current.getState() === 2) {
-        await stopCamera();
-      }
-      
-      // The `true` parameter forces the library to scan the full image, bypassing the restrictive qrbox
-      const decodedText = await html5QrCodeRef.current.scanFileV2(file, true);
-      onScanSuccess(decodedText.decodedText || decodedText);
-    } catch (err) {
-      setErrorMsg("Could not detect a valid QR code in that image. Try a clearer image or use the camera.");
-      console.error(err);
+    
+    if (html5QrCodeRef.current && html5QrCodeRef.current.getState() === 2) {
+      stopCamera().catch(console.error);
     }
     
-    e.target.value = ""; // reset
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        // Scale down huge images to prevent freezing, especially on older mobile devices
+        const MAX_DIM = 1000;
+        let width = img.width;
+        let height = img.height;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        try {
+          const imageData = ctx.getImageData(0, 0, width, height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          
+          if (code && code.data) {
+            onScanSuccess(code.data);
+          } else {
+            // Fallback to Html5Qrcode if jsQR fails
+            html5QrCodeRef.current.scanFileV2(file, false)
+              .then(decodedText => onScanSuccess(decodedText.decodedText || decodedText))
+              .catch(err => {
+                setErrorMsg("Could not detect a valid QR code in that image. Try a clearer image or use the camera.");
+                console.error("Both jsQR and html5-qrcode failed", err);
+              });
+          }
+        } catch (err) {
+          setErrorMsg("Error processing image.");
+          console.error(err);
+        }
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ""; // reset input
   };
 
   return (

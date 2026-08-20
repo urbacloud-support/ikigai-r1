@@ -17,6 +17,7 @@
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.26.0",
     "papaparse": "^5.5.4",
     "react": "^19.1.1",
