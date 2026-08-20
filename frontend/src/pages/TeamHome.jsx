@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import HackathonCountdown from "../components/HackathonCountdown.jsx";
 import {
   DndContext,
   closestCenter,
@@ -421,6 +422,9 @@ export default function TeamHome() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto w-full space-y-6">
+      {/* Hackathon Countdown Banner — server-authoritative, cheat-proof */}
+      <HackathonCountdown />
+
       {/* Timeline UI */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
         <h2 className="text-xl font-bold text-gray-800 mb-6">Your Progress</h2>
