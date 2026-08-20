@@ -1316,46 +1316,6 @@ export default function TeamHome() {
         </>
       )}
 
-      {/* Step 5: Team Entry Verification */}
-      {qrData && qrData.token && (
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <h2 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2">
-            <QrCode className="text-purple-600" />
-            Step 5: Team Entry Verification
-          </h2>
-          
-          <div className="bg-white border-2 border-purple-100 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
-            {/* Overlay background for checked-in status */}
-            {qrData.status === "CHECKED_IN" && (
-              <div className="absolute inset-0 bg-green-500/10 pointer-events-none z-0 border-4 border-green-500 rounded-2xl"></div>
-            )}
-            
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 z-10 relative">
-              <QRCode value={qrData.token} size={200} />
-            </div>
-            
-            <h3 className="text-xl font-bold text-gray-800 z-10 relative">Your Team Entry QR</h3>
-            
-            {qrData.status === "CHECKED_IN" ? (
-              <div className="mt-4 flex flex-col items-center justify-center z-10 relative">
-                <div className="flex items-center gap-2 text-sm font-black px-4 py-2 bg-green-100 text-green-800 rounded-full border-2 border-green-300 shadow-sm">
-                  <CheckCircle size={18} /> ENTRY APPROVED
-                </div>
-                <p className="text-green-700 font-medium mt-2 text-sm">Team check-in verified successfully.</p>
-              </div>
-            ) : (
-              <div className="z-10 relative flex flex-col items-center">
-                <p className="text-gray-500 mt-2 max-w-md">Present this QR code to the student volunteers at the entry desk along with original ID proofs and consent forms.</p>
-                
-                <div className="mt-6 flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2 bg-orange-50 text-orange-700 rounded-full border border-orange-200 shadow-sm">
-                  <Clock size={16} /> Pending Verification
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
