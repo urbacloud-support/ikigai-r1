@@ -492,6 +492,7 @@ router.put("/bulk-update-members", async (req, res) => {
         volunteerEmail,
         editedAt: new Date()
       });
+      verification.markModified('editHistory');
     }
 
     // members should be an object mapping email to member data updates

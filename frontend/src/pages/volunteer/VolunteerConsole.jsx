@@ -971,6 +971,8 @@ function VolunteerKitsCertificates() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           verificationId: teamId,
+          volunteerEmail: sessionStorage.getItem("care_email"),
+          volunteerName: sessionStorage.getItem("care_name"),
           members: membersMap
         })
       });
