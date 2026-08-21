@@ -64,6 +64,45 @@ export default function TeamLayout() {
         />
       )}
 
+      {/* Floating Contact Widget */}
+      <div className="fixed bottom-4 right-4 md:left-auto md:bottom-6 md:right-6 z-[40] md:w-64 shadow-xl rounded-xl overflow-hidden border border-blue-200 max-w-[calc(100vw-2rem)] md:max-w-none">
+        {showContact && (
+          <div className="p-4 bg-white text-xs border-b border-blue-100 space-y-3 max-h-[50vh] overflow-y-auto">
+            <div>
+              <p className="font-bold text-gray-800">Aarti Jaiswal</p>
+              <p className="text-gray-500 mb-1">Faculty Coordinator</p>
+              <a href="tel:+918966883481" className="flex items-center gap-1.5 text-blue-600 font-semibold hover:underline">
+                <Phone size={14} /> +91 89668 83481
+              </a>
+            </div>
+            <div className="pt-3 border-t border-gray-100">
+              <p className="font-bold text-gray-800">Anjali Khandelwal</p>
+              <p className="text-gray-500 mb-1">Student Coordinator</p>
+              <a href="tel:+919406920845" className="flex items-center gap-1.5 text-blue-600 font-semibold hover:underline">
+                <Phone size={14} /> 9406920845
+              </a>
+            </div>
+            <div className="pt-3 border-t border-gray-100">
+              <p className="font-bold text-gray-800">Haripriya Gupta</p>
+              <p className="text-gray-500 mb-1">Student Coordinator</p>
+              <a href="tel:+918839117054" className="flex items-center gap-1.5 text-blue-600 font-semibold hover:underline">
+                <Phone size={14} /> 8839117054
+              </a>
+            </div>
+          </div>
+        )}
+        <button 
+          onClick={() => setShowContact(!showContact)}
+          className="w-full flex items-center justify-between p-3.5 text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors"
+        >
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <HelpCircle size={18} className="text-blue-600" />
+            Any queries, contact us
+          </div>
+          {showContact ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+        </button>
+      </div>
+
       <aside 
         className={`bg-white border-r border-gray-200 shadow-sm flex flex-col shrink-0 transition-transform duration-300 ease-in-out fixed md:relative z-50 h-full md:h-auto ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
@@ -150,44 +189,7 @@ export default function TeamLayout() {
         <Outlet />
       </main>
 
-      {/* Floating Contact Widget */}
-      <div className="fixed bottom-4 left-4 right-4 md:right-auto md:bottom-6 md:left-6 z-[40] md:w-64 shadow-xl rounded-xl overflow-hidden border border-blue-200 max-w-[calc(100vw-2rem)] md:max-w-none">
-        {showContact && (
-          <div className="p-4 bg-white text-xs border-b border-blue-100 space-y-3 max-h-[50vh] overflow-y-auto">
-            <div>
-              <p className="font-bold text-gray-800">Aarti Jaiswal</p>
-              <p className="text-gray-500 mb-1">Faculty Coordinator</p>
-              <a href="tel:+918966883481" className="flex items-center gap-1.5 text-blue-600 font-semibold hover:underline">
-                <Phone size={14} /> +91 89668 83481
-              </a>
-            </div>
-            <div className="pt-3 border-t border-gray-100">
-              <p className="font-bold text-gray-800">Anjali Khandelwal</p>
-              <p className="text-gray-500 mb-1">Student Coordinator</p>
-              <a href="tel:+919406920845" className="flex items-center gap-1.5 text-blue-600 font-semibold hover:underline">
-                <Phone size={14} /> 9406920845
-              </a>
-            </div>
-            <div className="pt-3 border-t border-gray-100">
-              <p className="font-bold text-gray-800">Haripriya Gupta</p>
-              <p className="text-gray-500 mb-1">Student Coordinator</p>
-              <a href="tel:+918839117054" className="flex items-center gap-1.5 text-blue-600 font-semibold hover:underline">
-                <Phone size={14} /> 8839117054
-              </a>
-            </div>
-          </div>
-        )}
-        <button 
-          onClick={() => setShowContact(!showContact)}
-          className="w-full flex items-center justify-between p-3.5 text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors"
-        >
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <HelpCircle size={18} className="text-blue-600" />
-            Any queries, contact us
-          </div>
-          {showContact ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-        </button>
-      </div>
+
     </div>
   );
 }

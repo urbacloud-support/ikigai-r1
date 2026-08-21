@@ -3339,37 +3339,37 @@ app.get("/api/team/performance", async (req, res) => {
         const eventName = assessment.eventName || "Unknown Event";
         const teamAssessments = [];
 
-        // Helper function to extract text data from a list of criteria
-        const extractTextData = (criteriaList, evaluatorName) => {
-          if (!criteriaList || !Array.isArray(criteriaList)) return;
-          const textData = {};
-          let hasTextData = false;
-          for (const crit of criteriaList) {
-            if (crit && typeof crit === 'object' && crit.name) {
-              // Strictly capture ONLY fields where inputType is text
-              if (crit.inputType === 'text') {
-                const val = crit.score || crit.value || "No feedback";
-                textData[crit.name] = val;
-                hasTextData = true;
-              }
-            }
-          }
-          if (hasTextData) {
-            teamAssessments.push({ evaluatorName, textData });
-          }
-        };
-
         // Handle the new nested structure: assessment.evaluatorScores
         if (assessment.evaluatorScores && Array.isArray(assessment.evaluatorScores)) {
           for (const evaluatorScore of assessment.evaluatorScores) {
             const evaluatorName = evaluatorScore.evaluatorName || "Unknown Evaluator";
-            extractTextData(evaluatorScore.criteria, evaluatorName);
+            if (evaluatorScore.progress) {
+              teamAssessments.push({
+                evaluatorName,
+                textData: {
+                  "Progress Notes": evaluatorScore.progress
+                }
+              });
+            } else {
+              teamAssessments.push({
+                evaluatorName,
+                textData: {
+                  "Progress Notes": "No feedback provided"
+                }
+              });
+            }
           }
         } 
         // Handle the flat structure: assessment.criteria
         else if (assessment.criteria && Array.isArray(assessment.criteria)) {
           const evaluatorName = assessment.evaluatedBy || "Unknown Evaluator";
-          extractTextData(assessment.criteria, evaluatorName);
+          const notes = assessment.notes || assessment.progress || "No feedback provided";
+          teamAssessments.push({
+            evaluatorName,
+            textData: {
+              "Progress Notes": notes
+            }
+          });
         }
 
         // Push this event's performance if we found text feedback
