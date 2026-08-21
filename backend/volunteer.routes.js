@@ -373,6 +373,16 @@ router.post("/approve-team", async (req, res) => {
       email: volunteerEmail
     };
 
+    if (volunteerEmail) {
+      if (!verification.editHistory) verification.editHistory = [];
+      verification.editHistory.push({
+        volunteerName: volunteerName || "Student Volunteer",
+        volunteerEmail: volunteerEmail,
+        editedAt: new Date()
+      });
+      verification.markModified('editHistory');
+    }
+
     await verification.save();
 
     res.json({ success: true, message: "Team successfully checked in" });
