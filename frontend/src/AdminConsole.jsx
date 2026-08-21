@@ -890,19 +890,19 @@ export function UsersView() {
   const [editStudentId, setEditStudentId] = useState(null);
   const [editStudentForm, setEditStudentForm] = useState({ name: "", email: "", phone: "" });
 
-  const handleUpdateStudent = async (e, id) => {
+  const handleUpdateStudent = async (e, id, role) => {
     e.preventDefault();
-    const res = await fetch(`${API_BASE}/api/admin/student-coordinator`, {
+    const res = await fetch(`${API_BASE}/api/admin/users/global/${role}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...editStudentForm })
+      body: JSON.stringify(editStudentForm)
     });
     const data = await res.json();
     if (data.success) {
       setEditStudentId(null);
       fetchData();
     } else {
-      alert("Failed to update student coordinator");
+      alert(data.message || "Failed to update user");
     }
   };
 
@@ -1061,7 +1061,7 @@ export function UsersView() {
             {students.map(sc => (
               <div key={sc._id} className="p-4 hover:bg-gray-50 transition cursor-pointer" onClick={(e) => { if (editStudentId !== sc._id) setExpandedId(expandedId === sc._id ? null : sc._id); }}>
                 {editStudentId === sc._id ? (
-                  <form onSubmit={(e) => handleUpdateStudent(e, sc._id)} className="flex flex-col sm:flex-row gap-2 w-full p-2" onClick={e => e.stopPropagation()}>
+                  <form onSubmit={(e) => handleUpdateStudent(e, sc._id, sc.role)} className="flex flex-col sm:flex-row gap-2 w-full p-2" onClick={e => e.stopPropagation()}>
                     <input required type="text" value={editStudentForm.name} onChange={e => setEditStudentForm({ ...editStudentForm, name: e.target.value })} className="flex-1 border px-2 py-1 rounded" placeholder="Full Name" />
                     <input required type="email" value={editStudentForm.email} onChange={e => setEditStudentForm({ ...editStudentForm, email: e.target.value })} className="flex-1 border px-2 py-1 rounded" placeholder="Email" />
                     <input required type="text" value={editStudentForm.phone} onChange={e => setEditStudentForm({ ...editStudentForm, phone: e.target.value })} className="flex-1 border px-2 py-1 rounded" placeholder="Phone" />

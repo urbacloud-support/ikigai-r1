@@ -3046,6 +3046,40 @@ app.delete("/api/admin/users/global/:role/:id", async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+app.put("/api/admin/users/global/:role/:id", async (req, res) => {
+  try {
+    const { role, id } = req.params;
+    const { name, email, phone, password } = req.body;
+
+    const isUnique = await checkEmailUnique(email, id, role);
+    if (!isUnique) {
+      return res.status(400).json({ success: false, message: "This email is already in use by another user." });
+    }
+
+    const update = {
+      name,
+      email: email.toLowerCase().trim(),
+      phone,
+    };
+
+    if (password && password.trim()) {
+      update.passwordHash = hashPassword(password);
+    }
+
+    if (role === "studentVolunteer") {
+      await StudentVolunteer.findByIdAndUpdate(id, { $set: update });
+    } else if (role === "facultyCoordinator") {
+      await FacultyCoordinator.findByIdAndUpdate(id, { $set: update });
+    } else {
+      await StudentCoordinator.findByIdAndUpdate(id, { $set: update });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 // ✅ Admin: Team Leaders endpoints
 const UNIVERSE_WORDS = ["Milkyway", "Pluto", "Galaxy", "Nebula", "Orion", "Cosmos", "Nova", "Apollo", "Saturn", "Jupiter", "Starlight", "Meteor"];
 
