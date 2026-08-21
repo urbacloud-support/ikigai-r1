@@ -246,6 +246,8 @@ function VolunteerVerification({ qrToken, onBack, onComplete, buttonText = "Scan
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           verificationId: teamData.verification._id,
+          volunteerEmail: sessionStorage.getItem("care_email"),
+          volunteerName: sessionStorage.getItem("care_name"),
           members: memberVerifications
         })
       });
@@ -768,7 +770,12 @@ function VolunteerAttendance() {
       const res = await fetch(`${API_BASE}/api/volunteer/bulk-update-members`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verificationId: teamId, members: membersMap })
+        body: JSON.stringify({ 
+          verificationId: teamId, 
+          volunteerEmail: sessionStorage.getItem("care_email"),
+          volunteerName: sessionStorage.getItem("care_name"),
+          members: membersMap 
+        })
       });
       if (res.ok) {
         setTeams(prev => prev.map(t => t._id === teamId ? { ...t, isEdited: false } : t));

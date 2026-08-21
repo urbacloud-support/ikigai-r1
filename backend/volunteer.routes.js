@@ -83,6 +83,11 @@ export const TeamVerificationSchema = new mongoose.Schema(
     },
     checkedInAt: Date,
     registrationKitGiven: { type: Boolean, default: false },
+    editHistory: [{
+      volunteerName: String,
+      volunteerEmail: String,
+      editedAt: { type: Date, default: Date.now }
+    }],
   },
   { timestamps: true }
 );
@@ -381,11 +386,11 @@ router.post("/approve-team", async (req, res) => {
 router.get("/history", async (req, res) => {
   try {
     const { email } = req.query;
-    if (!email) return res.status(400).json({ success: false });
+    // Intentionally removing 'email' requirement and filter to make history global across all volunteers
+    // if (!email) return res.status(400).json({ success: false });
 
     const verifications = await TeamVerification.find({
-      status: "CHECKED_IN",
-      "verifiedBy.email": email
+      status: "CHECKED_IN"
     }).sort({ checkedInAt: -1 }).populate({
       path: "teamId",
       model: TeamModel,
@@ -473,11 +478,20 @@ router.put("/update-member-status", async (req, res) => {
 // Bulk update member verifications (History Edit or Bulk Attendance)
 router.put("/bulk-update-members", async (req, res) => {
   try {
-    const { verificationId, members } = req.body;
+    const { verificationId, members, volunteerEmail, volunteerName } = req.body;
     
     const verification = await TeamVerification.findById(verificationId);
     if (!verification) {
       return res.status(404).json({ success: false, message: "Verification not found" });
+    }
+
+    if (volunteerEmail && volunteerName) {
+      if (!verification.editHistory) verification.editHistory = [];
+      verification.editHistory.push({
+        volunteerName,
+        volunteerEmail,
+        editedAt: new Date()
+      });
     }
 
     // members should be an object mapping email to member data updates
