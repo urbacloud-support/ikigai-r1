@@ -723,9 +723,10 @@ app.post("/api/auth/send-otp", async (req, res) => {
   const student = await StudentCoordinator.findOne({ email }).lean();
   const volunteer = await StudentVolunteer.findOne({ email }).lean();
   const teamLeader = await TeamLeader.findOne({ email }).lean();
+  const faculty = await FacultyCoordinator.findOne({ email }).lean();
 
 
-  if (!chair && !student && !volunteer && !teamLeader) {
+  if (!chair && !student && !volunteer && !teamLeader && !faculty) {
     console.log("OTP failed for email:", email);
     return res.status(404).json({
       success: false,
@@ -913,6 +914,15 @@ app.post("/api/auth/verify-otp", async (req, res) => {
       email: email,
       name: teamLeader.name,
       teamName: teamLeader.teamName
+    });
+  }
+
+  const faculty = await FacultyCoordinator.findOne({ email });
+  if (faculty) {
+    return res.json({
+      success: true,
+      role: "facultyCoordinator",
+      name: faculty.name,
     });
   }
 
