@@ -98,8 +98,8 @@ export default function TeamEntryPass() {
             <h2 className="text-2xl md:text-3xl font-black text-white break-words leading-tight drop-shadow-md">{teamInfo?.teamName || "Your Team"}</h2>
           </div>
           
-          <div className="z-10 p-4 rounded-2xl mb-6">
-            <QRCode value={qrData.token} size={180} fgColor="#FFFFFF" bgColor="transparent" />
+          <div className="z-10 p-4 bg-white rounded-2xl mb-6 shadow-lg border border-purple-200">
+            <QRCode value={qrData.token} size={180} fgColor="#000000" bgColor="#FFFFFF" />
           </div>
 
           <div className="z-10 text-white w-full">

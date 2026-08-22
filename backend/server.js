@@ -22,12 +22,14 @@ app.use(
     origin: function (origin, callback) {
       const allowedOrigins = [
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "https://care-zeta.vercel.app",
         "https://ikigai-csit.up.railway.app"
       ];
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app')) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app') || (origin && (origin.includes('localhost') || origin.includes('127.0.0.1')))) {
         callback(null, true);
       } else {
+        console.error("Blocked by CORS. Origin:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -721,9 +723,10 @@ app.post("/api/auth/send-otp", async (req, res) => {
   const student = await StudentCoordinator.findOne({ email }).lean();
   const volunteer = await StudentVolunteer.findOne({ email }).lean();
   const teamLeader = await TeamLeader.findOne({ email }).lean();
+  const faculty = await FacultyCoordinator.findOne({ email }).lean();
 
 
-  if (!chair && !student && !volunteer && !teamLeader) {
+  if (!chair && !student && !volunteer && !teamLeader && !faculty) {
     console.log("OTP failed for email:", email);
     return res.status(404).json({
       success: false,
@@ -911,6 +914,15 @@ app.post("/api/auth/verify-otp", async (req, res) => {
       email: email,
       name: teamLeader.name,
       teamName: teamLeader.teamName
+    });
+  }
+
+  const faculty = await FacultyCoordinator.findOne({ email });
+  if (faculty) {
+    return res.json({
+      success: true,
+      role: "facultyCoordinator",
+      name: faculty.name,
     });
   }
 
@@ -2957,7 +2969,7 @@ app.get('/api/admin/evaluators/all', async (req, res) => {
 app.post("/api/admin/users/global", async (req, res) => {
   try {
     const { name, firstName, email, phone, role } = req.body;
-    
+
     // Check if exists globally
     const isUnique = await checkEmailUnique(email);
     if (!isUnique) {
@@ -3006,13 +3018,13 @@ app.get("/api/admin/users/global", async (req, res) => {
     const coordinators = await StudentCoordinator.find({ eventId: "global" }).lean();
     const volunteers = await StudentVolunteer.find({ eventId: "global" }).lean();
     const faculties = await FacultyCoordinator.find({ eventId: "global" }).lean();
-    
+
     const users = [
       ...coordinators.map(c => ({ ...c, role: 'studentCoordinator' })),
       ...volunteers.map(v => ({ ...v, role: 'studentVolunteer' })),
       ...faculties.map(f => ({ ...f, role: 'facultyCoordinator' }))
     ];
-    
+
     res.json({ success: true, users });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -3029,6 +3041,40 @@ app.delete("/api/admin/users/global/:role/:id", async (req, res) => {
     } else {
       await StudentCoordinator.findByIdAndDelete(id);
     }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put("/api/admin/users/global/:role/:id", async (req, res) => {
+  try {
+    const { role, id } = req.params;
+    const { name, email, phone, password } = req.body;
+
+    const isUnique = await checkEmailUnique(email, id, role);
+    if (!isUnique) {
+      return res.status(400).json({ success: false, message: "This email is already in use by another user." });
+    }
+
+    const update = {
+      name,
+      email: email.toLowerCase().trim(),
+      phone,
+    };
+
+    if (password && password.trim()) {
+      update.passwordHash = hashPassword(password);
+    }
+
+    if (role === "studentVolunteer") {
+      await StudentVolunteer.findByIdAndUpdate(id, { $set: update });
+    } else if (role === "facultyCoordinator") {
+      await FacultyCoordinator.findByIdAndUpdate(id, { $set: update });
+    } else {
+      await StudentCoordinator.findByIdAndUpdate(id, { $set: update });
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -3221,6 +3267,124 @@ app.get("/api/team/my-details", async (req, res) => {
 
     res.json({ success: true, team: teamObj });
   } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Performance route to fetch event wise assessment containing only text fields
+app.get("/api/team/performance", async (req, res) => {
+  try {
+    const email = req.query.email?.toLowerCase();
+    if (!email) return res.status(400).json({ success: false, message: "Email required" });
+
+    const db = mongoose.connection.db;
+    // Explicitly reference ikigai2 db as requested
+    const ikigai2Db = mongoose.connection.client.db("ikigai2");
+    const query = { $or: [{ "members.email": email }, { leaderEmail: email }] };
+
+    // Check various collections where the team might be stored, prioritizing ikigai2 teams
+    let teams = await ikigai2Db.collection("teams").find(query).toArray();
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("teams").find(query).toArray();
+    }
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("round2").find(query).toArray();
+    }
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("shortlisteds").find(query).toArray();
+    }
+    if (!teams || teams.length === 0) {
+      teams = await db.collection("participants").find(query).toArray();
+    }
+
+    // Fallback: check TeamLeader collection
+    if (!teams || teams.length === 0) {
+      const tl = await db.collection("teamleaders").findOne({ email });
+      if (tl && tl.participantId) {
+        const idQuery = {
+          $or: [
+            { participantId: tl.participantId },
+            { _id: new mongoose.Types.ObjectId(tl.participantId) }
+          ]
+        };
+        teams = await ikigai2Db.collection("teams").find(idQuery).toArray();
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("teams").find(idQuery).toArray();
+        }
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("round2").find(idQuery).toArray();
+        }
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("shortlisteds").find(idQuery).toArray();
+        }
+        if (!teams || teams.length === 0) {
+          teams = await db.collection("participants").find(idQuery).toArray();
+        }
+      }
+    }
+
+    if (!teams || teams.length === 0) {
+      return res.json({ success: true, performances: [] });
+    }
+
+    const performances = [];
+
+    for (const team of teams) {
+      const assessmentsList = team.Assessments || team.assessments;
+      if (!assessmentsList || !Array.isArray(assessmentsList)) continue;
+
+      for (const assessment of assessmentsList) {
+        if (!assessment) continue;
+
+        const eventName = assessment.eventName || "Unknown Event";
+        const teamAssessments = [];
+
+        // Handle the new nested structure: assessment.evaluatorScores
+        if (assessment.evaluatorScores && Array.isArray(assessment.evaluatorScores)) {
+          for (const evaluatorScore of assessment.evaluatorScores) {
+            const evaluatorName = evaluatorScore.evaluatorName || "Unknown Evaluator";
+            if (evaluatorScore.progress) {
+              teamAssessments.push({
+                evaluatorName,
+                textData: {
+                  "Progress Notes": evaluatorScore.progress
+                }
+              });
+            } else {
+              teamAssessments.push({
+                evaluatorName,
+                textData: {
+                  "Progress Notes": "No feedback provided"
+                }
+              });
+            }
+          }
+        } 
+        // Handle the flat structure: assessment.criteria
+        else if (assessment.criteria && Array.isArray(assessment.criteria)) {
+          const evaluatorName = assessment.evaluatedBy || "Unknown Evaluator";
+          const notes = assessment.notes || assessment.progress || "No feedback provided";
+          teamAssessments.push({
+            evaluatorName,
+            textData: {
+              "Progress Notes": notes
+            }
+          });
+        }
+
+        // Push this event's performance if we found text feedback
+        if (teamAssessments.length > 0) {
+          performances.push({
+            eventName,
+            assessments: teamAssessments
+          });
+        }
+      }
+    }
+
+    res.json({ success: true, performances });
+  } catch (err) {
+    console.error("Error fetching performance:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

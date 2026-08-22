@@ -71,6 +71,37 @@ function SortableTrackItem({ id, track, index, disabled }) {
   );
 }
 
+const formatProblemStatement = (text) => {
+  if (!text) return { title: "", description: "" };
+  
+  const regex1 = /\(Problem ID [^)]+\)--"([^"]+)"\s*-\s*(.*)/i;
+  const match1 = text.match(regex1);
+  if (match1) {
+    return { title: match1[1], description: match1[2] };
+  }
+  
+  const regex2 = /\(Problem ID [^)]+\)--([^-]+)\s*-\s*(.*)/i;
+  const match2 = text.match(regex2);
+  if (match2) {
+    return { title: match2[1].trim(), description: match2[2].trim() };
+  }
+  
+  return { title: "", description: text };
+};
+
+const RenderProblemText = ({ text }) => {
+  const { title, description } = formatProblemStatement(text);
+  if (title) {
+    return (
+      <div className="flex flex-col gap-1.5 pt-1">
+        <h4 className="font-extrabold text-gray-900 text-[1.1rem] leading-tight">{title}</h4>
+        <p className="text-gray-600 font-normal text-[0.95rem] leading-relaxed text-justify">{description}</p>
+      </div>
+    );
+  }
+  return <div className="text-gray-700 leading-relaxed font-normal text-[0.95rem]">{text}</div>;
+};
+
 export default function TeamHome() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -448,10 +479,11 @@ export default function TeamHome() {
       </div>
 
       {/* Timeline UI */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Your Progress</h2>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative pt-4 pb-2">
-          {/* Connecting Line */}
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 md:mb-6">Your Progress</h2>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative pt-4 pb-2 w-full gap-8 md:gap-0">
+          
+          {/* Connecting Line (Desktop) */}
           <div className="hidden md:block absolute top-[41px] left-[10%] right-[10%] h-1.5 bg-gray-200 z-0 rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 transition-all duration-500 ease-in-out"
@@ -468,137 +500,181 @@ export default function TeamHome() {
             ></div>
           </div>
 
+          {/* Connecting Line (Mobile Vertical) */}
+          <div className="md:hidden absolute top-8 bottom-8 left-[35px] w-1.5 bg-gray-200 z-0 rounded-full overflow-hidden">
+            <div
+              className="w-full bg-green-500 transition-all duration-500 ease-in-out"
+              style={{
+                height:
+                  regStatus === "Approved" && assignedTrack && publishProblemStatements
+                    ? "75%"
+                    : regStatus === "Approved"
+                      ? "50%"
+                      : submitted && !isReopened
+                        ? "25%"
+                        : "0%",
+              }}
+            ></div>
+          </div>
+
           {/* Step 1: Round 1 */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative group">
-            <div className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg mb-3 shadow-[0_0_15px_rgba(34,197,94,0.4)] ring-4 ring-white transition-all">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
+            <div className="w-14 h-14 shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg md:mb-3 shadow-[0_0_15px_rgba(34,197,94,0.4)] ring-4 ring-white transition-all">
               1
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Round 1</p>
-            <p className="text-xs text-green-600 font-bold mt-1">Shortlisted</p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Round 1</p>
+              <p className="text-xs text-green-600 font-bold md:mt-1">Shortlisted</p>
+            </div>
           </div>
 
           {/* Step 2: Registration */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
             <div
-              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all ${
+              className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all ${
                 submitted && !isReopened
                   ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-                  : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] scale-110"
+                  : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] md:scale-110"
               }`}
             >
               2
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Registration</p>
-            <p
-              className={`text-xs font-bold mt-1 ${submitted && !isReopened ? "text-green-600" : "text-purple-600"}`}
-            >
-              {submitted && !isReopened
-                ? "Completed"
-                : isReopened
-                  ? "Correction Required"
-                  : "Action Required"}
-            </p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Registration</p>
+              <p
+                className={`text-xs font-bold md:mt-1 ${submitted && !isReopened ? "text-green-600" : "text-purple-600"}`}
+              >
+                {submitted && !isReopened
+                  ? "Completed"
+                  : isReopened
+                    ? "Correction Required"
+                    : "Action Required"}
+              </p>
+            </div>
           </div>
 
           {/* Step 3: Verification */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
             <div
-              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all ${
+              className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all ${
                 regStatus === "Approved"
                   ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                   : submitted && !isReopened && regStatus === "Contact"
-                    ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.6)] scale-110"
+                    ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.6)] md:scale-110"
                     : submitted && !isReopened
-                      ? "bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.6)] scale-110"
+                      ? "bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.6)] md:scale-110"
                       : "bg-gray-100 text-gray-400 border-2 border-gray-200"
               }`}
             >
               3
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Verification</p>
-            <p
-              className={`text-xs font-bold mt-1 ${
-                regStatus === "Approved"
-                  ? "text-green-600"
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Verification</p>
+              <p
+                className={`text-xs font-bold md:mt-1 ${
+                  regStatus === "Approved"
+                    ? "text-green-600"
+                    : submitted && !isReopened && regStatus === "Contact"
+                      ? "text-red-600"
+                      : submitted && !isReopened
+                        ? "text-amber-600"
+                        : "text-gray-400"
+                }`}
+              >
+                {regStatus === "Approved"
+                  ? "Verified"
                   : submitted && !isReopened && regStatus === "Contact"
-                    ? "text-red-600"
+                    ? "Contact Admin"
                     : submitted && !isReopened
-                      ? "text-amber-600"
-                      : "text-gray-400"
-              }`}
-            >
-              {regStatus === "Approved"
-                ? "Verified"
-                : submitted && !isReopened && regStatus === "Contact"
-                  ? "Contact Admin"
-                  : submitted && !isReopened
-                    ? "Pending Review"
-                    : "Awaiting Details"}
-            </p>
+                      ? "Pending Review"
+                      : "Awaiting Details"}
+              </p>
+            </div>
           </div>
 
           {/* Step 4: Problem Statement */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
             <div
-              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all ${
+              className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all ${
                 regStatus === "Approved" && assignedTrack && publishProblemStatements
                   ? assignedProblemStatement 
                     ? "bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-                    : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] scale-110"
+                    : "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.6)] md:scale-110"
                   : "bg-gray-100 text-gray-400 border-2 border-gray-200"
               }`}
             >
               4
             </div>
-            <p className="text-sm font-extrabold text-gray-900">
-              Problem Statement
-            </p>
-            <p
-              className={`text-xs font-bold mt-1 ${
-                regStatus === "Approved" && assignedTrack && publishProblemStatements 
-                  ? assignedProblemStatement ? "text-green-600" : "text-purple-600" 
-                  : "text-gray-400"
-              }`}
-            >
-              {regStatus === "Approved" && assignedTrack && publishProblemStatements
-                ? assignedProblemStatement
-                  ? "Locked In"
-                  : "Released"
-                : "Awaiting Release"}
-            </p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">
+                Problem Statement
+              </p>
+              <p
+                className={`text-xs font-bold md:mt-1 ${
+                  regStatus === "Approved" && assignedTrack && publishProblemStatements 
+                    ? assignedProblemStatement ? "text-green-600" : "text-purple-600" 
+                    : "text-gray-400"
+                }`}
+              >
+                {regStatus === "Approved" && assignedTrack && publishProblemStatements
+                  ? assignedProblemStatement
+                    ? "Locked In"
+                    : "Released"
+                  : "Awaiting Release"}
+              </p>
+            </div>
           </div>
 
           {/* Step 5: Round 2 */}
-          <div className="flex flex-col items-center flex-1 text-center z-10 px-2 relative">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg mb-3 ring-4 ring-white transition-all bg-gray-100 text-gray-400 border-2 border-gray-200">
+          <div className="flex flex-row md:flex-col items-center md:items-center flex-1 md:text-center z-10 px-2 relative group w-full md:w-auto gap-4 md:gap-0">
+            <div className="w-14 h-14 shrink-0 rounded-full flex items-center justify-center font-bold text-lg md:mb-3 ring-4 ring-white transition-all bg-gray-100 text-gray-400 border-2 border-gray-200">
               5
             </div>
-            <p className="text-sm font-extrabold text-gray-900">Round 2</p>
-            <p className="text-xs text-gray-500 font-bold mt-1">
-              Hackathon (Aug 21)
-            </p>
+            <div className="flex flex-col text-left md:text-center flex-1">
+              <p className="text-sm font-extrabold text-gray-900">Round 2</p>
+              <p className="text-xs text-gray-500 font-bold md:mt-1">
+                Hackathon (Aug 21)
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       {submitted && !isReopened ? (
         regStatus === "Approved" && assignedTrack && publishProblemStatements ? (
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-purple-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Congratulations, you have been assigned {assignedTrack} - {tracks.find(t => t.id === assignedTrack || t._id === assignedTrack)?.title || assignedTrack}.
+          <div className="bg-white p-8 rounded-3xl shadow-lg shadow-purple-900/5 border border-purple-100 overflow-hidden relative">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-100 to-fuchsia-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 pointer-events-none"></div>
+            
+            <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 to-pink-600 mb-8 relative z-10 tracking-tight">
+              Congratulations! You've been assigned {assignedTrack} - {tracks.find(t => t.id === assignedTrack || t._id === assignedTrack)?.title || assignedTrack}.
             </h2>
             
             {assignedProblemStatement ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Upload size={32} />
+              <div className="relative z-10 bg-gradient-to-br from-green-50 to-emerald-50/30 border border-green-200/60 rounded-2xl p-8 text-center shadow-inner">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/30 transform -rotate-3 transition-transform hover:rotate-0 duration-300">
+                  <CheckCircle size={40} strokeWidth={2.5} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Problem Statement Selected!</h3>
-                <p className="text-gray-600 mb-4">You have successfully locked in your problem statement.</p>
-                <div className="inline-block bg-white border border-gray-200 rounded-lg p-4 text-left shadow-sm max-w-2xl w-full">
-                  <div className="flex gap-4 items-center">
-                    <div className="text-3xl font-black text-green-600 opacity-50">{assignedProblemStatement}</div>
-                    <div className="text-gray-800 font-semibold text-lg">{availableProblemStatements.find(p => p.id === assignedProblemStatement)?.text || "Your problem statement"}</div>
+                <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Problem Statement Locked In!</h3>
+                <p className="text-gray-500 font-medium mb-8">You have successfully secured your problem statement for the hackathon.</p>
+                
+                <div className="mx-auto bg-white rounded-xl p-6 md:p-8 text-left shadow-xl shadow-gray-200/50 max-w-3xl w-full border border-gray-100 relative group overflow-hidden transition-all hover:shadow-2xl hover:shadow-green-900/5 hover:-translate-y-1">
+                  {/* Subtle top accent line */}
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+                  
+                  <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                    <div className="flex-shrink-0">
+                      <div className="bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl inline-block shadow-sm">
+                        <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-1">Problem ID</span>
+                        <span className="text-3xl font-black text-green-600 tracking-tight">{assignedProblemStatement}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="text-gray-800 font-bold text-lg md:text-xl leading-relaxed">
+                        <RenderProblemText text={availableProblemStatements.find(p => p.id === assignedProblemStatement)?.text || "Your assigned problem statement."} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -621,7 +697,7 @@ export default function TeamHome() {
                         {ps.id}
                       </div>
                       <div className="flex-1 text-gray-800 font-medium text-lg leading-snug">
-                        {ps.text}
+                        <RenderProblemText text={ps.text} />
                       </div>
                       <div className="text-sm font-bold text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200">
                         {ps.left} left

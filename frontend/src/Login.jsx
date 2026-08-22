@@ -146,6 +146,8 @@ body: JSON.stringify({
         navigate("/volunteer");
       } else if (data.role === "teamLeader") {
         navigate("/team");
+      } else if (data.role === "facultyCoordinator") {
+        navigate("/faculty");
       }
     }, 700);
 

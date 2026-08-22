@@ -9,6 +9,7 @@ export default function FacultyHistory({ teamsData }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedTeamId, setExpandedTeamId] = useState(null);
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [documentFilter, setDocumentFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("NAME_ASC");
 
   const filteredTeams = teamsData.filter(t => {
@@ -17,7 +18,17 @@ export default function FacultyHistory({ teamsData }) {
     const matchesFilter = filterStatus === "ALL" ? true :
                           filterStatus === "CHECKED_IN" ? t.status === "CHECKED_IN" :
                           t.status !== "CHECKED_IN";
-    return matchesSearch && matchesFilter;
+                          
+    let matchesDocs = true;
+    if (documentFilter === "MISSING_ID") {
+      matchesDocs = t.memberVerifications?.some(m => !m.governmentIdVerified);
+    } else if (documentFilter === "MISSING_CONSENT") {
+      matchesDocs = t.memberVerifications?.some(m => !m.consentVerified);
+    } else if (documentFilter === "MISSING_ANY") {
+      matchesDocs = t.memberVerifications?.some(m => !m.governmentIdVerified || !m.consentVerified);
+    }
+
+    return matchesSearch && matchesFilter && matchesDocs;
   }).sort((a, b) => {
     if (sortBy === "NAME_ASC") return (a.teamName || "").localeCompare(b.teamName || "");
     if (sortBy === "NAME_DESC") return (b.teamName || "").localeCompare(a.teamName || "");
@@ -192,6 +203,17 @@ export default function FacultyHistory({ teamsData }) {
                 <option value="CHECKED_IN">Checked In</option>
                 <option value="PENDING">Pending</option>
               </select>
+
+              <select 
+                value={documentFilter}
+                onChange={(e) => setDocumentFilter(e.target.value)}
+                className="px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 text-sm flex-1 sm:flex-none"
+              >
+                <option value="ALL">All Documents</option>
+                <option value="MISSING_ID">Missing Gov ID</option>
+                <option value="MISSING_CONSENT">Missing Consent</option>
+                <option value="MISSING_ANY">Missing Any Doc</option>
+              </select>
               
               <select 
                 value={sortBy}
@@ -271,10 +293,18 @@ export default function FacultyHistory({ teamsData }) {
                                       <Badge condition={m.isPresent} text={m.isPresent ? "Present" : "Absent"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-red-100 text-red-700" />
                                     </td>
                                     <td className="py-3">
-                                      <Badge condition={m.governmentIdVerified} text={m.governmentIdVerified ? "Verified" : "Missing"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
+                                      {m.isPresent ? (
+                                        <Badge condition={m.governmentIdVerified} text={m.governmentIdVerified ? "Verified" : "Missing"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">-</span>
+                                      )}
                                     </td>
                                     <td className="py-3">
-                                      <Badge condition={m.consentVerified} text={m.consentVerified ? "Verified" : "Missing"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
+                                      {m.isPresent ? (
+                                        <Badge condition={m.consentVerified} text={m.consentVerified ? "Verified" : "Missing"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">-</span>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
@@ -343,8 +373,17 @@ export default function FacultyHistory({ teamsData }) {
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <Badge condition={m.isPresent} text={m.isPresent ? "Present" : "Absent"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-red-100 text-red-700" />
-                              <Badge condition={m.governmentIdVerified} text={m.governmentIdVerified ? "Gov ID" : "No Gov ID"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
-                              <Badge condition={m.consentVerified} text={m.consentVerified ? "Consent" : "No Consent"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
+                              {m.isPresent ? (
+                                <>
+                                  <Badge condition={m.governmentIdVerified} text={m.governmentIdVerified ? "Gov ID" : "No Gov ID"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
+                                  <Badge condition={m.consentVerified} text={m.consentVerified ? "Consent" : "No Consent"} trueColor="bg-emerald-100 text-emerald-700" falseColor="bg-amber-100 text-amber-700" />
+                                </>
+                              ) : (
+                                <>
+                                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">-</span>
+                                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">-</span>
+                                </>
+                              )}
                             </div>
                           </div>
                         ))}
