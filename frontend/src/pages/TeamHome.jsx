@@ -425,6 +425,28 @@ export default function TeamHome() {
       {/* Hackathon Countdown Banner — server-authoritative, cheat-proof */}
       <HackathonCountdown />
 
+      {/* PPT Template Download Card */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-2xl shadow-lg border border-purple-500 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 text-white hover:shadow-xl transition-shadow">
+        <div>
+          <h2 className="text-2xl font-black mb-1 flex items-center gap-2">
+            <span className="text-3xl">📊</span> Official Presentation Template
+          </h2>
+          <p className="text-purple-100 font-medium text-sm md:text-base">
+            Please download and use this official PPT template for your final pitch presentation.
+          </p>
+        </div>
+        <a 
+          href="https://res.cloudinary.com/dixdw1mus/raw/upload/v1787400989/ikigai_2026_template.pptx" 
+          download="IKIGAI_2026_Template.pptx"
+          target="_blank"
+          rel="noreferrer"
+          className="bg-white text-purple-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 whitespace-nowrap shrink-0 border border-transparent hover:border-purple-200"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Template
+        </a>
+      </div>
+
       {/* Timeline UI */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
         <h2 className="text-xl font-bold text-gray-800 mb-6">Your Progress</h2>
