@@ -457,12 +457,15 @@ export default function TeamHome() {
       <HackathonCountdown />
 
       {/* PPT Template Download Card */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-2xl shadow-lg border border-purple-500 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 text-white hover:shadow-xl transition-shadow">
-        <div>
+      <div 
+        className="p-6 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row items-center justify-between gap-4 text-white hover:shadow-xl transition-shadow relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #753a99 0%, #ba3b78 50%, #e34e89 100%)' }}
+      >
+        <div className="relative z-10">
           <h2 className="text-2xl font-black mb-1 flex items-center gap-2">
             <span className="text-3xl">📊</span> Official Presentation Template
           </h2>
-          <p className="text-purple-100 font-medium text-sm md:text-base">
+          <p className="opacity-90 font-medium text-sm md:text-base">
             Please download and use this official PPT template for your final pitch presentation.
           </p>
         </div>
@@ -471,7 +474,7 @@ export default function TeamHome() {
           download="IKIGAI_2026_Template.pptx"
           target="_blank"
           rel="noreferrer"
-          className="bg-white text-purple-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 whitespace-nowrap shrink-0 border border-transparent hover:border-purple-200"
+          className="relative z-10 bg-white text-pink-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 whitespace-nowrap shrink-0"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Template
